@@ -1,0 +1,50 @@
+[
+  {
+    "id": 1,
+    "title": "Мои заявки",
+    "description": "Просмотр и создание заявок",
+    "icon": "Assignment",
+    "path": "/services",
+    "color": "primary"
+  },
+  {
+    "id": 2,
+    "title": "База знаний",
+    "description": "Документация и справочники",
+    "icon": "LibraryBooks",
+    "path": "/knowledge",
+    "color": "secondary"
+  },
+  {
+    "id": 3,
+    "title": "Организация",
+    "description": "Структура компании",
+    "icon": "Business",
+    "path": "/org",
+    "color": "info"
+  },
+  {
+    "id": 4,
+    "title": "Профиль",
+    "description": "Личный кабинет",
+    "icon": "Person",
+    "path": "/profile",
+    "color": "warning"
+  },
+  {
+    "id": 5,
+    "title": "Техподдержка",
+    "description": "Создать заявку в IT",
+    "icon": "Support",
+    "path": "/services",
+    "color": "error"
+  },
+  {
+    "id": 6,
+    "title": "Отпуск",
+    "description": "Заявка на отпуск",
+    "icon": "Event",
+    "path": "/services",
+    "color": "success"
+  }
+]

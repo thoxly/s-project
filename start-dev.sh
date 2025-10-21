@@ -24,4 +24,26 @@ echo "Press Ctrl+C to stop all servers"
 echo ""
 
 # Start both servers with hot reload
-npm run dev
+echo "🔄 Starting backend server..."
+cd server && npm run dev &
+BACKEND_PID=$!
+
+echo "🔄 Starting frontend server..."
+cd client && npm run dev &
+FRONTEND_PID=$!
+
+# Function to cleanup processes on exit
+cleanup() {
+    echo ""
+    echo "🛑 Stopping servers..."
+    kill $BACKEND_PID 2>/dev/null
+    kill $FRONTEND_PID 2>/dev/null
+    echo "✅ Servers stopped"
+    exit 0
+}
+
+# Set up signal handlers
+trap cleanup SIGINT SIGTERM
+
+# Wait for both processes
+wait $BACKEND_PID $FRONTEND_PID

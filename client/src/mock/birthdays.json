@@ -1,0 +1,34 @@
+[
+  {
+    "id": 1,
+    "name": "Анна Сидорова",
+    "position": "Системный администратор",
+    "birthday": "2025-01-20",
+    "avatar": "AS",
+    "isToday": true
+  },
+  {
+    "id": 2,
+    "name": "Михаил Козлов",
+    "position": "Менеджер по продажам",
+    "birthday": "2025-01-21",
+    "avatar": "МК",
+    "isToday": false
+  },
+  {
+    "id": 3,
+    "name": "Елена Петрова",
+    "position": "HR-менеджер",
+    "birthday": "2025-01-23",
+    "avatar": "ЕП",
+    "isToday": false
+  },
+  {
+    "id": 4,
+    "name": "Дмитрий Волков",
+    "position": "Разработчик",
+    "birthday": "2025-01-25",
+    "avatar": "ДВ",
+    "isToday": false
+  }
+]

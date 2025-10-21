@@ -10,9 +10,21 @@ import OrgStructure from './pages/OrgStructure'
 
 function App() {
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <Box sx={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      minHeight: '100vh',
+      backgroundColor: 'background.default'
+    }}>
       <Navbar />
-      <Container maxWidth="xl" sx={{ flex: 1, py: 3 }}>
+      <Container 
+        maxWidth="xl" 
+        sx={{ 
+          flex: 1, 
+          py: 4,
+          px: { xs: 2, sm: 3, md: 4 }
+        }}
+      >
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/profile" element={<Profile />} />
