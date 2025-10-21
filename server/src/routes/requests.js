@@ -40,7 +40,8 @@ router.get('/', (req, res) => {
   res.json({
     success: true,
     data: mockRequests,
-    total: mockRequests.length
+    total: mockRequests.length,
+    message: "🔥 Hot reload is working! Server restarted automatically."
   });
 });
 
