@@ -4,6 +4,22 @@ echo "🚀 Starting Portal S with hot reload..."
 echo "📁 Project directory: $(pwd)"
 echo ""
 
+# Check and start MongoDB
+echo "🔍 Checking MongoDB..."
+if ! mongosh --eval "db.runCommand('ping')" --quiet >/dev/null 2>&1; then
+    echo "⚠️  MongoDB is not running. Starting MongoDB..."
+    brew services start mongodb-community
+    sleep 3
+    if mongosh --eval "db.runCommand('ping')" --quiet >/dev/null 2>&1; then
+        echo "✅ MongoDB started successfully"
+    else
+        echo "❌ Failed to start MongoDB. Please start it manually: brew services start mongodb-community"
+        exit 1
+    fi
+else
+    echo "✅ MongoDB is already running"
+fi
+
 # Check if ports are available
 if lsof -Pi :3000 -sTCP:LISTEN -t >/dev/null ; then
     echo "⚠️  Port 3000 is already in use. Killing existing processes..."
