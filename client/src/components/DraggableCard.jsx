@@ -101,8 +101,8 @@ const DraggableCard = ({
               sx={{
                 display: 'flex',
                 alignItems: 'center',
-                p: 2.5,
-                pt: 3,
+                p: { xs: 2, sm: 2.5 },
+                pt: { xs: 2.5, sm: 3 },
                 background: isDragging 
                   ? 'linear-gradient(135deg, rgba(30, 58, 138, 0.05) 0%, rgba(30, 64, 175, 0.03) 100%)'
                   : 'transparent',
@@ -111,6 +111,8 @@ const DraggableCard = ({
                   cursor: isEditMode ? 'grabbing' : 'default'
                 },
                 transition: 'background 200ms ease',
+                flexWrap: { xs: 'wrap', sm: 'nowrap' },
+                gap: { xs: 1, sm: 0 },
               }}
               {...(isEditMode ? { ...attributes, ...listeners } : {})}
             >
@@ -146,9 +148,9 @@ const DraggableCard = ({
                   sx={{ 
                     bgcolor: `${color}.main`,
                     background: `linear-gradient(135deg, ${color}.main 0%, ${color}.dark 100%)`,
-                    mr: 2, 
-                    width: 42, 
-                    height: 42,
+                    mr: { xs: 1, sm: 2 }, 
+                    width: { xs: 36, sm: 42 }, 
+                    height: { xs: 36, sm: 42 },
                     boxShadow: `0 4px 12px ${color === 'primary' ? 'rgba(30, 58, 138, 0.3)' : 'rgba(5, 150, 105, 0.3)'}`,
                     transition: 'transform 300ms ease, box-shadow 300ms ease',
                     '&:hover': {
@@ -167,6 +169,8 @@ const DraggableCard = ({
                   flex: 1,
                   color: 'text.primary',
                   letterSpacing: '-0.02em',
+                  fontSize: { xs: '1rem', sm: '1.25rem' },
+                  lineHeight: 1.2,
                 }}
               >
                 {title}
@@ -200,9 +204,9 @@ const DraggableCard = ({
             {/* Содержимое - всегда раскрыто */}
             <Box 
               sx={{ 
-                p: 2.5,
+                p: { xs: 2, sm: 2.5 },
                 pt: 1,
-                minHeight: isEditMode ? 120 : 'auto',
+                minHeight: isEditMode ? { xs: 100, sm: 120 } : 'auto',
                 background: isEditMode 
                   ? 'linear-gradient(180deg, rgba(248, 250, 252, 0.5) 0%, white 100%)'
                   : 'transparent',

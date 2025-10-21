@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
 import App from './App.jsx'
+import { registerServiceWorker } from './utils/pwa.js'
 
 // MUI Theme configuration
 const theme = createTheme({
@@ -69,44 +70,86 @@ const theme = createTheme({
       fontWeight: 700,
       lineHeight: 1.2,
       letterSpacing: '-0.025em',
+      '@media (max-width: 768px)': {
+        fontSize: '2rem',
+      },
+      '@media (max-width: 480px)': {
+        fontSize: '1.75rem',
+      },
     },
     h2: {
       fontSize: '2rem',
       fontWeight: 600,
       lineHeight: 1.3,
       letterSpacing: '-0.025em',
+      '@media (max-width: 768px)': {
+        fontSize: '1.75rem',
+      },
+      '@media (max-width: 480px)': {
+        fontSize: '1.5rem',
+      },
     },
     h3: {
       fontSize: '1.5rem',
       fontWeight: 600,
       lineHeight: 1.4,
+      '@media (max-width: 768px)': {
+        fontSize: '1.375rem',
+      },
+      '@media (max-width: 480px)': {
+        fontSize: '1.25rem',
+      },
     },
     h4: {
       fontSize: '1.25rem',
       fontWeight: 600,
       lineHeight: 1.4,
+      '@media (max-width: 768px)': {
+        fontSize: '1.125rem',
+      },
     },
     h5: {
       fontSize: '1.125rem',
       fontWeight: 600,
       lineHeight: 1.4,
+      '@media (max-width: 768px)': {
+        fontSize: '1rem',
+      },
     },
     h6: {
       fontSize: '1rem',
       fontWeight: 600,
       lineHeight: 1.4,
+      '@media (max-width: 768px)': {
+        fontSize: '0.875rem',
+      },
     },
     body1: {
       fontSize: '1rem',
       lineHeight: 1.6,
+      '@media (max-width: 768px)': {
+        fontSize: '0.875rem',
+      },
     },
     body2: {
       fontSize: '0.875rem',
       lineHeight: 1.6,
+      '@media (max-width: 768px)': {
+        fontSize: '0.8125rem',
+      },
     },
     button: {
       fontWeight: 500,
       textTransform: 'none',
+    },
+  },
+  breakpoints: {
+    values: {
+      xs: 0,
+      sm: 600,
+      md: 900,
+      lg: 1200,
+      xl: 1536,
     },
   },
   shape: {
@@ -183,3 +226,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     </ThemeProvider>
   </React.StrictMode>,
 )
+
+// Register Service Worker for PWA
+if (import.meta.env.PROD) {
+  registerServiceWorker();
+}
