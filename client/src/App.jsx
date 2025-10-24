@@ -7,9 +7,11 @@ import Profile from './pages/Profile'
 import Services from './pages/Services'
 import KnowledgeBase from './pages/KnowledgeBase'
 import OrgStructure from './pages/OrgStructure'
+import { GlobalStateProvider } from './store/GlobalContext'
 
 function App() {
   return (
+    <GlobalStateProvider>
     <Box sx={{ 
       display: 'flex', 
       flexDirection: 'column', 
@@ -34,6 +36,7 @@ function App() {
         </Routes>
       </Container>
     </Box>
+    </GlobalStateProvider>
   )
 }
 
