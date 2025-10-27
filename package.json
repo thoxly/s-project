@@ -12,7 +12,6 @@
     "start": "cd server && npm start",
     "start:server": "cd server && npm start",
     "start:client": "cd client && npm run dev",
-    "start:tuna": "bash ./start-with-tuna.sh",
     "tuna:domain": "bash ./start-with-custom-domain.sh",
     "tuna:status": "ps aux | grep tuna | grep -v grep",
     "test:webhook": "node test-webhook.js"
