@@ -11,19 +11,29 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: true, // Allow all origins for testing
   credentials: true
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// MongoDB connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/portal-s', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log('✅ MongoDB connected'))
-.catch(err => console.error('❌ MongoDB connection error:', err));
+// MongoDB connection with fallback
+const connectToMongoDB = async () => {
+  try {
+    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/portal-s', {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    console.log('✅ MongoDB connected');
+    return true;
+  } catch (err) {
+    console.warn('⚠️  MongoDB connection failed, running in mock mode:', err.message);
+    return false;
+  }
+};
+
+// Try to connect to MongoDB, but don't fail if it's not available
+connectToMongoDB();
 
 // Routes
 app.use('/api/elma', require('./routes/elma'));
@@ -33,10 +43,75 @@ app.use('/api/mock', require('./routes/mock'));
 
 // Health check
 app.get('/api/health', (req, res) => {
+  const mongoStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+  
   res.json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    database: {
+      mongodb: mongoStatus,
+      mode: mongoStatus === 'connected' ? 'database' : 'mock'
+    },
+    services: {
+      api: 'running',
+      mock: 'available'
+    }
+  });
+});
+
+// Webhook endpoint for external integrations
+app.post('/api/webhooks', (req, res) => {
+  console.log('📨 Webhook received:', {
+    timestamp: new Date().toISOString(),
+    headers: req.headers,
+    body: req.body,
+    query: req.query
+  });
+  
+  // Process the webhook data here
+  const { type, data } = req.body;
+  
+  // Example webhook processing
+  switch (type) {
+    case 'user.created':
+      console.log('👤 New user created:', data);
+      break;
+    case 'order.updated':
+      console.log('📦 Order updated:', data);
+      break;
+    case 'payment.completed':
+      console.log('💳 Payment completed:', data);
+      break;
+    default:
+      console.log('🔔 Unknown webhook type:', type);
+  }
+  
+  res.json({ 
+    status: 'success', 
+    message: 'Webhook received',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Generic webhook endpoint for any external system
+app.post('/api/webhooks/:system', (req, res) => {
+  const system = req.params.system;
+  console.log(`📨 Webhook from ${system}:`, {
+    timestamp: new Date().toISOString(),
+    system: system,
+    headers: req.headers,
+    body: req.body,
+    query: req.query
+  });
+  
+  // Process webhook based on system
+  // You can add specific logic for different external systems
+  
+  res.json({ 
+    status: 'success', 
+    message: `Webhook from ${system} received`,
+    timestamp: new Date().toISOString()
   });
 });
 

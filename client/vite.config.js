@@ -6,6 +6,13 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
+    host: '0.0.0.0', // Allow external connections for tuna tunnel
+    allowedHosts: [
+      'localhost',
+      '127.0.0.1',
+      '.ru.tuna.am', // Allow all tuna.am subdomains
+      'all' // Fallback to allow all hosts
+    ],
     proxy: {
       '/api': {
         target: 'http://localhost:3000',
