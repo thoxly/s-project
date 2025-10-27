@@ -1,0 +1,44 @@
+[
+  {
+    "_id": "12",
+    "title": "Скрипты",
+    "description": "Готовые примеры автоматизации процессов",
+    "type": "pdf",
+    "category": "technical"
+  },
+  {
+    "_id": "13",
+    "title": "Видеоуроки",
+    "description": "Обучающие материалы для новых сотрудников",
+    "type": "video",
+    "category": "technical"
+  },
+  {
+    "_id": "14",
+    "title": "Инструкции",
+    "description": "Пошаговые инструкции по работе с системами",
+    "type": "pdf",
+    "category": "technical"
+  },
+  {
+    "_id": "15",
+    "title": "Тесты",
+    "description": "Тесты для проверки знаний",
+    "type": "link",
+    "category": "technical"
+  },
+  {
+    "_id": "16",
+    "title": "Яндекс Wiki",
+    "description": "Документация внутренних систем",
+    "type": "wiki",
+    "category": "technical"
+  },
+  {
+    "_id": "17",
+    "title": "Полезные ссылки",
+    "description": "Собрание внешних ресурсов и утилит",
+    "type": "link",
+    "category": "technical"
+  }
+]

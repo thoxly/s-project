@@ -1,31 +1,3 @@
-// import React from "react";
-// import { TreeItem } from "@mui/x-tree-view/TreeItem";
-// import { Box } from "@mui/material";
-// import { EmployeeCard } from "../components/EmployeeCard";
-
-// export const CustomTreeItem = (props) => {
-//   const { itemId, label, expansionIcon, indentationAtItemLevel, itemData,position, ...other } = props;
-//   console.log(label)
-//   const data = itemData || {}; // 👈 теперь гарантированно есть весь объект
-//   console.log(typeof(label))
-//   return (
-//     <TreeItem
-//       {...other}
-//       itemId={itemId}
-//       label={
-//         <Box display="flex" alignItems="center" gap={1}>
-//           {expansionIcon && <span>{expansionIcon}</span>}
-//           <EmployeeCard
-//             fullName={data.fullName || label || "Без имени"}
-//             position={data.position || ""}
-//             avatarText={data.avatarText || "?"}
-//             avatarUrl={data.avatarUrl || null}
-//           />
-//         </Box>
-//       }
-//     />
-//   );
-// };
 import React from 'react';
 import { TreeItem } from '@mui/x-tree-view/TreeItem';
 import { Box } from '@mui/material';
