@@ -1,0 +1,79 @@
+[
+  {
+    "_id": "1",
+    "title": "Положение о внутреннем распорядке",
+    "description": "Основные правила поведения и трудового распорядка",
+    "type": "pdf",
+    "category": "administrative"
+  },
+  {
+    "_id": "2",
+    "title": "Антикоррупционная политика",
+    "description": "Документ, регулирующий этические стандарты",
+    "type": "pdf",
+    "category": "administrative"
+  },
+  {
+    "_id": "3",
+    "title": "Правила пожарной безопасности",
+    "description": "Инструкции по действиям в чрезвычайных ситуациях",
+    "type": "wiki",
+    "category": "administrative"
+  },
+  {
+    "_id": "4",
+    "title": "Правила охраны труда",
+    "description": "Обязательные требования по охране труда для всех сотрудников",
+    "type": "pdf",
+    "category": "administrative"
+  },
+  {
+    "_id": "5",
+    "title": "ГО и ЧС",
+    "description": "Действия при чрезвычайных ситуациях и гражданская оборона",
+    "type": "wiki",
+    "category": "administrative"
+  },
+  {
+    "_id": "6",
+    "title": "Гос. тайна",
+    "description": "Регламент работы с конфиденциальной информацией",
+    "type": "pdf",
+    "category": "administrative"
+  },
+  {
+    "_id": "7",
+    "title": "Шаблоны писем",
+    "description": "Подборка корпоративных шаблонов",
+    "type": "link",
+    "category": "administrative"
+  },
+  {
+    "_id": "8",
+    "title": "Положения",
+    "description": "Все внутренние положения компании",
+    "type": "pdf",
+    "category": "administrative"
+  },
+  {
+    "_id": "9",
+    "title": "Процессы",
+    "description": "Описание ключевых бизнес-процессов",
+    "type": "wiki",
+    "category": "administrative"
+  },
+  {
+    "_id": "10",
+    "title": "Должностные инструкции",
+    "description": "Шаблоны должностных инструкций",
+    "type": "pdf",
+    "category": "administrative"
+  },
+  {
+    "_id": "11",
+    "title": "Опросы",
+    "description": "Формы внутренних опросов",
+    "type": "link",
+    "category": "administrative"
+  }
+]

@@ -9,12 +9,26 @@
     "dev:client": "cd client && npm run dev",
     "install:all": "npm install && cd server && npm install && cd ../client && npm install",
     "build": "cd client && npm run build",
-    "start": "cd server && npm start"
+    "start": "cd server && npm start",
+    "start:server": "cd server && npm start",
+    "start:client": "cd client && npm run dev",
+    "tuna:domain": "bash ./start-with-custom-domain.sh",
+    "tuna:status": "ps aux | grep tuna | grep -v grep",
+    "test:webhook": "node test-webhook.js"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
   },
   "dependencies": {
     "date-fns": "^4.1.0"
+    "concurrently": "^8.2.2",
+    "js-yaml": "^4.1.0"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.3.4",
+    "@mui/material": "^7.3.4",
+    "@mui/x-tree-view": "^8.14.1"
   }
 }
