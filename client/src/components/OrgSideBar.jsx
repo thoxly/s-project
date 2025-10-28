@@ -6,13 +6,18 @@ import {
   Avatar,
   Typography,
   Box,
-  Button,
   Divider,
   Stack,
   IconButton,
+  Zoom,
+  Grid,
 } from '@mui/material';
 import PersonOutlined from '@mui/icons-material/PersonOutlined';
 import CloseIcon from '@mui/icons-material/Close';
+import BusinessIcon from '@mui/icons-material/Business';
+import ApartmentOutlined from '@mui/icons-material/ApartmentOutlined';
+import PeopleIcon from '@mui/icons-material/People';
+import { EmployeeCard } from './EmployeeCard';
 
 export const OrgSideBar = ({
   avatarText = '?',
@@ -23,158 +28,161 @@ export const OrgSideBar = ({
   phone = '—',
   workPhone = '—',
   email = '—',
-  openState=null,
-   onClose = () => {} 
+  openState = null,
+  onClose = () => {},
+  employees = [], // список сотрудников для отдела
+  isDepartment = true, // всегда отдел
+  onEmployeeClick = null, // обработчик клика по сотруднику
 }) => {
   return (
-    <Card
-      sx={{
-        borderRadius: 3,
-        boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-        overflow: 'hidden',
-        maxWidth: 420,
-        mx: 'auto',
-        backgroundColor: 'background.paper',
-        position: 'relative', // ← обязательно для абсолютного позиционирования
-      }}
-    >
-      {/* Крестик в правом верхнем углу */}
-        
-
-      {/* Верхняя часть с аватаром и именем */}
-      <Box
-        sx={{
-          backgroundColor: 'white',
-          boxShadow: '0px 76px 61px -45px rgba(30, 60, 147, 0.36) inset',
-          color: 'text.primary',
-          padding: '24px 24px 8px 24px',
-          textAlign: 'center',
-          position: 'relative',
-        }}
-      >
-        <IconButton
-        onClick={onClose}
+    <>
+      <Zoom in timeout={300}>
+        <Card
           sx={{
-            position: 'absolute',
-            top: 22,
-            right: 20,
-            width: 32,
-            height: 32,
-            mb:1,
-            backgroundColor: 'rgba(30,60,147,0)',
-            color: 'black',
-            '&:hover': {
-            backgroundColor: 'rgb(30,60,147)',
-            color:'white'
-          },
-          }}
-        >
-          <CloseIcon sx={{ fontSize: '1rem', }} />
-        </IconButton>
-        <Avatar
-          sx={{
-            width: 120,
-            height: 120,
+            borderRadius: 3,
+            boxShadow: '0 12px 40px rgba(30, 60, 147, 0.2)',
+            overflow: 'hidden',
+            maxWidth: 420,
             mx: 'auto',
-            mb: 1,
-            bgcolor: avatarUrl ? 'transparent' : 'secondary.main',
+            backgroundColor: 'background.paper',
+            position: 'relative',
           }}
         >
-          {avatarUrl ? (
-            <img
-              src={avatarUrl}
-              alt={fullName}
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                borderRadius: '50%',
+          {/* Верхняя часть с аватаром и именем */}
+          <Box
+            sx={{
+              background: 'linear-gradient(135deg, rgba(30, 60, 147, 0.95) 0%, rgba(30, 60, 147, 0.85) 100%)',
+              color: 'white',
+              padding: '32px 24px 24px 24px',
+              textAlign: 'center',
+              position: 'relative',
+            }}
+          >
+            <IconButton
+              onClick={onClose}
+              sx={{
+                position: 'absolute',
+                top: 16,
+                right: 16,
+                width: 36,
+                height: 36,
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                color: 'white',
+                backdropFilter: 'blur(10px)',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.25)',
+                  transform: 'rotate(90deg)',
+                },
+                transition: 'all 0.3s ease',
               }}
-            />
-          ) : avatarText ? (
-            <Typography variant="h5">{avatarText}</Typography>
-          ) : (
-            <PersonOutlined sx={{ fontSize: '2.2rem', color: 'secondary.contrastText' }} />
-          )}
-        </Avatar>
+            >
+              <CloseIcon sx={{ fontSize: '1.2rem' }} />
+            </IconButton>
+            <Avatar
+              sx={{
+                width: 120,
+                height: 120,
+                mx: 'auto',
+                mb: 2,
+                bgcolor: avatarUrl ? 'transparent' : 'rgba(255, 255, 255, 0.2)',
+                border: '4px solid rgba(255, 255, 255, 0.3)',
+                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.2)',
+              }}
+            >
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt={fullName}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    borderRadius: '50%',
+                  }}
+                />
+              ) : isDepartment ? (
+                <ApartmentOutlined sx={{ fontSize: '3rem', color: 'white' }} />
+              ) : avatarText ? (
+                <Typography variant="h5" sx={{ color: 'white' }}>
+                  {avatarText}
+                </Typography>
+              ) : (
+                <PersonOutlined sx={{ fontSize: '3rem', color: 'white' }} />
+              )}
+            </Avatar>
 
-        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-          {fullName}
-        </Typography>
-      </Box>
-
-      {/* Основная информация */}
-      <CardContent sx={{ p: 3 }}>
-        <Stack spacing={1.5}>
-          <Box>
-            <Typography variant="body2" color="text.secondary">
-              Должность
+            <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>
+              {fullName}
             </Typography>
-            <Typography variant="body1" fontWeight={500}>
+            <Typography variant="body2" sx={{ opacity: 0.9, fontWeight: 500 }}>
               {position}
             </Typography>
           </Box>
 
-          <Box>
-            <Typography variant="body2" color="text.secondary">
-              Организация / подразделение
-            </Typography>
-            <Typography variant="body1" fontWeight={500}>
-              {department}
-            </Typography>
-          </Box>
 
-          <Divider />
+          {/* Основная информация */}
+          <CardContent sx={{ p: 3 }}>
+            <Stack spacing={2.5}>
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                  <BusinessIcon sx={{ fontSize: 18, color: 'primary.main' }} />
+                  <Typography variant="body2" color="text.secondary" fontWeight={600}>
+                    Тип подразделения
+                  </Typography>
+                </Box>
+                <Typography variant="body1" fontWeight={500} sx={{ pl: 3.5 }}>
+                  {department}
+                </Typography>
+              </Box>
 
-          <Box>
-            <Typography variant="body2" color="text.secondary">
-              Телефон
-            </Typography>
-            <Typography variant="body1" fontWeight={500}>
-              {phone}
-            </Typography>
-          </Box>
+              <Divider />
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                  <PeopleIcon sx={{ fontSize: 18, color: 'primary.main' }} />
+                  <Typography variant="body2" color="text.secondary" fontWeight={600}>
+                    Количество сотрудников
+                  </Typography>
+                </Box>
+                <Typography variant="body1" fontWeight={500} sx={{ pl: 3.5 }}>
+                  {employees.length} человек
+                </Typography>
+              </Box>
+            </Stack>
+          </CardContent>
 
-          <Box>
-            <Typography variant="body2" color="text.secondary">
-              Служебный телефон
-            </Typography>
-            <Typography variant="body1" fontWeight={500}>
-              {workPhone}
-            </Typography>
-          </Box>
-
-          <Box>
-            <Typography variant="body2" color="text.secondary">
-              E-mail
-            </Typography>
-            <Typography variant="body1" fontWeight={500}>
-              {email}
-            </Typography>
-          </Box>
-        </Stack>
-
-        <Button
-          variant="outlined"
-          fullWidth
-          sx={{
-            borderRadius: 2,
-            fontWeight: 500,
-            textTransform: 'none',
-            mt: 3,
-            '&:hover': {
-              backgroundColor: 'primary.main',
-              color: 'white',
-              transform: 'translateY(-2px)',
-              boxShadow: '0 4px 12px rgba(30, 58, 138, 0.3)',
-            },
-            transition: 'all 0.2s ease-in-out',
-          }}
-        >
-          Изменить данные
-        </Button>
-      </CardContent>
-    </Card>
+          {/* Список сотрудников отдела */}
+          {employees.length > 0 && (
+            <>
+              <Divider />
+              <Box sx={{ p: 3, pt: 0 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                  <PeopleIcon sx={{ fontSize: 18, color: 'primary.main' }} />
+                  <Typography variant="h6" fontWeight={600} color="text.primary">
+                    Сотрудники отдела
+                  </Typography>
+                </Box>
+                <Grid container spacing={1.5}>
+                  {employees.map((employee) => (
+                    <Grid item xs={12} key={employee.id}>
+                      <EmployeeCard
+                        fullName={employee.fullName}
+                        position={employee.position}
+                        avatarUrl={employee.avatarUrl}
+                        phone={employee.phone}
+                        work_phone={employee.work_phone}
+                        email={employee.email}
+                        department={false}
+                        onEmployeeClick={onEmployeeClick}
+                      />
+                    </Grid>
+                  ))}
+                </Grid>
+              </Box>
+            </>
+          )}
+        </Card>
+      </Zoom>
+    </>
   );
 };
 
