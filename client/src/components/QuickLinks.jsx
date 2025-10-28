@@ -6,7 +6,9 @@ import {
   Box,
   Button,
   Avatar,
-  Grid
+  Grid,
+  useMediaQuery,
+  useTheme
 } from '@mui/material'
 import { Link as LinkIcon } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
@@ -22,6 +24,8 @@ import {
 } from '@mui/icons-material'
 
 const QuickLinks = () => {
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
   const [links, setLinks] = useState([])
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
@@ -71,8 +75,8 @@ const QuickLinks = () => {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100px">
-        <Typography>Загрузка ссылок...</Typography>
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight={isMobile ? "80px" : "100px"}>
+        <Typography variant={isMobile ? "body2" : "body1"}>Загрузка ссылок...</Typography>
       </Box>
     )
   }
@@ -88,18 +92,18 @@ const QuickLinks = () => {
                 startIcon={getIcon(link.icon, link.color)}
                 onClick={() => handleLinkClick(link.path)}
                 sx={{ 
-                  py: { xs: 1, sm: 1.5 },
+                  py: { xs: 1.5, sm: 1.5 },
                   px: { xs: 1, sm: 2 },
                   fontWeight: 500,
-                  borderRadius: 2,
+                  borderRadius: { xs: 1.5, sm: 2 },
                   textTransform: 'none',
-                  minHeight: { xs: 60, sm: 80 },
+                  minHeight: { xs: 70, sm: 80 },
                   borderColor: `${link.color}.main`,
                   color: `${link.color}.main`,
                   '&:hover': {
                     backgroundColor: `${link.color}.main`,
                     color: 'white',
-                    transform: 'translateY(-2px)',
+                    transform: isMobile ? 'translateY(-1px)' : 'translateY(-2px)',
                     boxShadow: `0 4px 12px ${link.color === 'primary' ? 'rgba(30, 58, 138, 0.3)' : 'rgba(0, 0, 0, 0.15)'}`,
                     '& .MuiSvgIcon-root': {
                       color: 'white',
@@ -108,11 +112,35 @@ const QuickLinks = () => {
                   transition: 'all 0.2s ease-in-out'
                 }}
               >
-                <Box sx={{ textAlign: 'left', width: '100%' }}>
-                  <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                <Box sx={{ 
+                  textAlign: 'left', 
+                  width: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'flex-start',
+                  gap: { xs: 0.25, sm: 0.5 }
+                }}>
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      fontWeight: 600, 
+                      mb: 0,
+                      fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                      lineHeight: { xs: 1.2, sm: 1.3 }
+                    }}
+                  >
                     {link.title}
                   </Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
+                  <Typography 
+                    variant="caption" 
+                    color="text.secondary" 
+                    sx={{ 
+                      display: 'block', 
+                      fontSize: { xs: '0.65rem', sm: '0.75rem' },
+                      lineHeight: { xs: 1.2, sm: 1.3 },
+                      textAlign: 'left'
+                    }}
+                  >
                     {link.description}
                   </Typography>
                 </Box>

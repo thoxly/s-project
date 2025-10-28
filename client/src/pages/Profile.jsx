@@ -5,7 +5,8 @@ import {
   Tabs,
   Tab,
   Typography,
-  Paper
+  Paper,
+  Fade
 } from '@mui/material'
 import {
   Person as PersonIcon,
@@ -81,66 +82,101 @@ const Profile = () => {
   }
 
   return (
-    <Box>
-      {/* Breadcrumbs */}
-      <Breadcrumbs />
-      
-      {/* Заголовок страницы */}
-      <Typography variant="h4" sx={{ mb: 3, fontWeight: 700, color: 'text.primary' }}>
-        {getTabTitle(activeTab)}
-      </Typography>
+    <Box sx={{ position: 'relative', overflow: 'hidden', minHeight: '100vh' }}>
+      <Container maxWidth="xl">
+        {/* Breadcrumbs */}
+        <Breadcrumbs />
+        
+        {/* Заголовок страницы */}
+        <Fade in timeout={500}>
+          <Box sx={{ mb: 4 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+              <Box
+                sx={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 3,
+                  background: 'linear-gradient(135deg, rgba(30, 60, 147, 0.1) 0%, rgba(30, 60, 147, 0.05) 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <PersonIcon sx={{ fontSize: 32, color: 'primary.main' }} />
+              </Box>
+              <Box>
+                <Typography
+                  variant="h3"
+                  sx={{
+                    fontWeight: 700,
+                    background: 'linear-gradient(135deg, rgb(30, 60, 147) 0%, rgb(45, 85, 180) 100%)',
+                    backgroundClip: 'text',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                  }}
+                >
+                  {getTabTitle(activeTab)}
+                </Typography>
+                <Typography variant="body1" color="text.secondary" sx={{ mt: 0.5 }}>
+                  Личный кабинет и рабочие инструменты
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+        </Fade>
 
-      {/* Табы */}
-      <Paper 
-        elevation={0} 
-        sx={{ 
-          mb: 3,
-          borderRadius: 2,
-          border: '1px solid',
-          borderColor: 'divider',
-          backgroundColor: 'background.paper'
-        }}
-      >
-        <Tabs
-          value={activeTab}
-          onChange={handleTabChange}
-          variant="scrollable"
-          scrollButtons="auto"
-          sx={{
-            '& .MuiTab-root': {
-              minHeight: 48,
-              textTransform: 'none',
-              fontWeight: 500,
-              fontSize: '0.95rem',
-              px: 3,
-              '&.Mui-selected': {
-                fontWeight: 600,
-                color: 'primary.main'
-              }
-            },
-            '& .MuiTabs-indicator': {
-              height: 3,
-              borderRadius: '3px 3px 0 0',
-              backgroundColor: 'primary.main'
-            }
+        {/* Табы */}
+        <Paper 
+          elevation={0} 
+          sx={{ 
+            mb: 3,
+            borderRadius: 2,
+            border: '1px solid',
+            borderColor: 'divider',
+            backgroundColor: 'background.paper'
           }}
         >
-          {tabs.map((tab) => (
-            <Tab
-              key={tab.id}
-              value={tab.id}
-              label={tab.label}
-              icon={tab.icon}
-              iconPosition="start"
-            />
-          ))}
-        </Tabs>
-      </Paper>
+          <Tabs
+            value={activeTab}
+            onChange={handleTabChange}
+            variant="scrollable"
+            scrollButtons="auto"
+            sx={{
+              '& .MuiTab-root': {
+                minHeight: 48,
+                textTransform: 'none',
+                fontWeight: 500,
+                fontSize: '0.95rem',
+                px: 3,
+                '&.Mui-selected': {
+                  fontWeight: 600,
+                  color: 'primary.main'
+                }
+              },
+              '& .MuiTabs-indicator': {
+                height: 3,
+                borderRadius: '3px 3px 0 0',
+                backgroundColor: 'primary.main'
+              }
+            }}
+          >
+            {tabs.map((tab) => (
+              <Tab
+                key={tab.id}
+                value={tab.id}
+                label={tab.label}
+                icon={tab.icon}
+                iconPosition="start"
+              />
+            ))}
+          </Tabs>
+        </Paper>
 
-      {/* Контент вкладки */}
-      <Box>
-        {renderActiveTab()}
-      </Box>
+        {/* Контент вкладки */}
+        <Box>
+          {renderActiveTab()}
+        </Box>
+      </Container>
     </Box>
   )
 }

@@ -10,7 +10,9 @@ import {
   CardContent,
   Zoom,
   CircularProgress,
-  Avatar
+  Avatar,
+  useMediaQuery,
+  useTheme
 } from '@mui/material'
 import {
   Refresh as RefreshIcon,
@@ -43,13 +45,16 @@ import { useDashboardState } from '../hooks/useDashboardState.jsx'
 
 const Dashboard = () => {
   const navigate = useNavigate()
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
+  const isTablet = useMediaQuery(theme.breakpoints.down('lg'))
   const { widgets, isLoading, isEditMode, reorderWidgets, toggleWidgetWidth, toggleEditMode, resetToDefault, getIconComponent } = useDashboardState()
   const [activeId, setActiveId] = React.useState(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8, // Требуем перемещение на 8px перед началом drag
+        distance: isMobile ? 12 : 8, // Увеличиваем расстояние для мобильных устройств
       },
     }),
     useSensor(KeyboardSensor, {
@@ -175,27 +180,34 @@ const Dashboard = () => {
   return (
     <Box>
       {/* Основной контент */}
-      <Container maxWidth="xl">
+      <Container maxWidth="xl" sx={{ px: { xs: 1, sm: 2, md: 3 } }}>
         {/* Приветствие прямо в теле страницы */}
         <Typography 
-          variant="h6" 
+          variant={isMobile ? "h6" : "h6"} 
           sx={{ 
             color: 'text.primary',
             fontWeight: 500,
             display: 'flex',
             alignItems: 'center',
             gap: 1,
-            mb: 3,
+            mb: { xs: 2, sm: 3 },
+            fontSize: { xs: '1.1rem', sm: '1.25rem' },
+            px: { xs: 1, sm: 0 }
           }}
         >
           👋 Добро пожаловать, Иван!
         </Typography>
 
         {/* Кнопка настроек справа сверху */}
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'flex-end', 
+          mb: { xs: 1, sm: 2 },
+          px: { xs: 1, sm: 0 }
+        }}>
           <Tooltip title={isEditMode ? "Выйти из режима редактирования" : "Настроить дашборд"} placement="left">
             <Fab
-              size="small"
+              size={isMobile ? "medium" : "small"}
               color={isEditMode ? "primary" : "default"}
               onClick={toggleEditMode}
               sx={{
@@ -204,13 +216,15 @@ const Dashboard = () => {
                   : '0 2px 8px rgba(0, 0, 0, 0.15)',
                 transition: 'all 300ms ease',
                 backgroundColor: isEditMode ? 'primary.main' : 'white',
+                width: { xs: 48, sm: 40 },
+                height: { xs: 48, sm: 40 },
                 '&:hover': {
-                  transform: 'scale(1.1) rotate(90deg)',
+                  transform: isMobile ? 'scale(1.05)' : 'scale(1.1) rotate(90deg)',
                   boxShadow: '0 6px 16px rgba(30, 58, 138, 0.5)',
                 }
               }}
             >
-              <SettingsIcon sx={{ fontSize: 20 }} />
+              <SettingsIcon sx={{ fontSize: { xs: 24, sm: 20 } }} />
             </Fab>
           </Tooltip>
         </Box>
@@ -226,15 +240,16 @@ const Dashboard = () => {
             <SortableContext items={widgets.map(w => w.id)} strategy={verticalListSortingStrategy}>
               <Box
                 sx={{
-                  minHeight: 400,
-                  borderRadius: 4,
+                  minHeight: { xs: 300, sm: 400 },
+                  borderRadius: { xs: 2, sm: 4 },
                   background: 'linear-gradient(135deg, rgba(30, 58, 138, 0.02) 0%, rgba(30, 64, 175, 0.01) 100%)',
                   border: '3px dashed',
                   borderColor: activeId ? 'primary.main' : 'primary.light',
-                  p: 3,
+                  p: { xs: 2, sm: 3 },
                   transition: 'all 400ms cubic-bezier(0.4, 0, 0.2, 1)',
                   position: 'relative',
                   overflow: 'hidden',
+                  mx: { xs: 1, sm: 0 },
                   '&::before': {
                     content: '""',
                     position: 'absolute',
@@ -255,16 +270,18 @@ const Dashboard = () => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    mb: 3,
-                    gap: 2,
+                    mb: { xs: 2, sm: 3 },
+                    gap: { xs: 1.5, sm: 2 },
                     position: 'relative',
                     zIndex: 1,
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    textAlign: { xs: 'center', sm: 'left' }
                   }}
                 >
                   <Box
                     sx={{
-                      width: 40,
-                      height: 40,
+                      width: { xs: 36, sm: 40 },
+                      height: { xs: 36, sm: 40 },
                       borderRadius: '50%',
                       background: 'linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%)',
                       display: 'flex',
@@ -273,26 +290,29 @@ const Dashboard = () => {
                       boxShadow: '0 4px 12px rgba(30, 58, 138, 0.3)',
                     }}
                   >
-                    <SettingsIcon sx={{ color: 'white', fontSize: 20 }} />
+                    <SettingsIcon sx={{ color: 'white', fontSize: { xs: 18, sm: 20 } }} />
                   </Box>
                   <Typography 
-                    variant="h6" 
+                    variant={isMobile ? "body1" : "h6"}
                     sx={{ 
                       fontWeight: 700,
                       background: 'linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%)',
                       backgroundClip: 'text',
                       WebkitBackgroundClip: 'text',
                       WebkitTextFillColor: 'transparent',
+                      fontSize: { xs: '0.9rem', sm: '1.25rem' },
+                      lineHeight: { xs: 1.3, sm: 1.2 }
                     }}
                   >
-                    Режим редактирования • Перетаскивайте блоки
+                    {isMobile ? 'Режим редактирования' : 'Режим редактирования • Перетаскивайте блоки'}
                   </Typography>
                 </Box>
-                <Grid container spacing={{ xs: 2, md: 3 }}>
+                <Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
                   {widgets.map((widget, index) => (
                     <Grid 
                       item 
                       xs={12} 
+                      sm={widget.width === 2 ? 12 : 6} 
                       md={widget.width === 2 ? 12 : 6} 
                       lg={widget.width === 2 ? 8 : 4} 
                       key={widget.id}
@@ -378,16 +398,18 @@ const Dashboard = () => {
         ) : (
           <Box
             sx={{
-              minHeight: 400,
+              minHeight: { xs: 300, sm: 400 },
               borderRadius: 2,
-              transition: 'background-color 0.2s ease-in-out'
+              transition: 'background-color 0.2s ease-in-out',
+              mx: { xs: 1, sm: 0 }
             }}
           >
-            <Grid container spacing={{ xs: 2, md: 3 }}>
+            <Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
               {widgets.map((widget, index) => (
                 <Grid 
                   item 
                   xs={12} 
+                  sm={widget.width === 2 ? 12 : 6} 
                   md={widget.width === 2 ? 12 : 6} 
                   lg={widget.width === 2 ? 8 : 4} 
                   key={widget.id}
@@ -425,25 +447,25 @@ const Dashboard = () => {
               onClick={resetToDefault}
               sx={{
                 position: 'fixed',
-                bottom: 24,
-                right: 24,
+                bottom: { xs: 16, sm: 24 },
+                right: { xs: 16, sm: 24 },
                 zIndex: 1000,
-                width: 64,
-                height: 64,
+                width: { xs: 56, sm: 64 },
+                height: { xs: 56, sm: 64 },
                 background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
                 boxShadow: '0 8px 24px rgba(5, 150, 105, 0.4)',
                 transition: 'all 300ms ease',
                 '&:hover': {
-                  transform: 'scale(1.1) rotate(180deg)',
+                  transform: isMobile ? 'scale(1.05)' : 'scale(1.1) rotate(180deg)',
                   boxShadow: '0 12px 32px rgba(5, 150, 105, 0.5)',
                   background: 'linear-gradient(135deg, #047857 0%, #065f46 100%)',
                 },
                 '&:active': {
-                  transform: 'scale(0.95) rotate(180deg)',
+                  transform: isMobile ? 'scale(0.95)' : 'scale(0.95) rotate(180deg)',
                 }
               }}
             >
-              <RefreshIcon sx={{ fontSize: 28 }} />
+              <RefreshIcon sx={{ fontSize: { xs: 24, sm: 28 } }} />
             </Fab>
           </Tooltip>
         </Zoom>

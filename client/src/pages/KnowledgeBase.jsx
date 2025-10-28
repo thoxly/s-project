@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, CircularProgress, Alert } from '@mui/material';
+import { Box, Typography, CircularProgress, Alert, Container, Fade } from '@mui/material';
+import SchoolIcon from '@mui/icons-material/School';
 import SearchBar from '../components/SearchBar';
 import FilterBar from '../components/FilterBar';
 import KnowledgeTabs from '../components/KnowledgeTabs';
@@ -97,35 +98,71 @@ const KnowledgeBase = () => {
   }
 
   return (
-    <Box sx={{ padding: '0 32px 0 32px' }}>
-      <Typography variant="h4" gutterBottom>
-        База знаний
-      </Typography>
+    <Box sx={{ position: 'relative', overflow: 'hidden', minHeight: '100vh' }}>
+      <Container maxWidth="xl">
+        {/* Заголовок страницы */}
+        <Fade in timeout={500}>
+          <Box sx={{ mb: 4 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+              <Box
+                sx={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 3,
+                  background: 'linear-gradient(135deg, rgba(30, 60, 147, 0.1) 0%, rgba(30, 60, 147, 0.05) 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <SchoolIcon sx={{ fontSize: 32, color: 'primary.main' }} />
+              </Box>
+              <Box>
+                <Typography
+                  variant="h3"
+                  sx={{
+                    fontWeight: 700,
+                    background: 'linear-gradient(135deg, rgb(30, 60, 147) 0%, rgb(45, 85, 180) 100%)',
+                    backgroundClip: 'text',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                  }}
+                >
+                  База знаний
+                </Typography>
+                <Typography variant="body1" color="text.secondary" sx={{ mt: 0.5 }}>
+                  Корпоративные документы и инструкции
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+        </Fade>
 
-      {/* === Верхняя панель: SearchBar, FilterBar и Tabs в одной строке === */}
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: 2,
-          mb: 3,
-        }}
-      >
-        <SearchBar value={search} onChange={setSearch} />
-        <FilterBar value={filter} onChange={setFilter} />
-        <Box sx={{ ml: 'auto' }}> {/* Tabs справа */}
-          <KnowledgeTabs value={tab} onChange={setTab} />
+        {/* === Верхняя панель: SearchBar, FilterBar и Tabs в одной строке === */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 2,
+            mb: 3,
+          }}
+        >
+          <SearchBar value={search} onChange={setSearch} />
+          <FilterBar value={filter} onChange={setFilter} />
+          <Box sx={{ ml: 'auto' }}> {/* Tabs справа */}
+            <KnowledgeTabs value={tab} onChange={setTab} />
+          </Box>
         </Box>
-      </Box>
 
-      <KnowledgeGrid data={filteredData} onOpen={handleOpenModal} />
+        <KnowledgeGrid data={filteredData} onOpen={handleOpenModal} />
 
-      <KnowledgeModal
-        open={!!modalData}
-        onClose={handleCloseModal}
-        data={modalData}
-      />
+        <KnowledgeModal
+          open={!!modalData}
+          onClose={handleCloseModal}
+          data={modalData}
+        />
+      </Container>
     </Box>
   );
 };
