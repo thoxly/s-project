@@ -1,23 +1,18 @@
 const express = require('express');
 const axios = require('axios');
 const router = express.Router();
-const dotenv = require('dotenv');
-const path = require('path');
-dotenv.config();
 
 // ELMA365 API configuration
 const ELMA_API_URL = process.env.ELMA_API_URL;
 const ELMA_TOKEN = process.env.ELMA_TOKEN;
-const ELMA_WEBHOOK_URL=process.env.ELMA_WEBHOOK_URL
-const ELMA_WEBHOOK_TOKEN=process.env.ELMA_WEBHOOK_TOKEN
 
 router.post('/get_data', async (req, res) => {
   try {
-    const response = await fetch(`${ELMA_WEBHOOK_URL}`, {
+    const response = await fetch('https://og4d3xrizqpay.elma365.ru/api/extensions/583d4eea-7f06-47fd-b078-a0caf4f83095/script/post_articles', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${ELMA_WEBHOOK_TOKEN}`,
+        'Authorization': `Bearer 94803282-2c5f-44f1-a57f-d59552040232`,
       },
     });
 
