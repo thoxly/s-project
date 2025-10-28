@@ -7,6 +7,8 @@ export default defineConfig({
   server: {
     port: 5173,
     host: '0.0.0.0', // Allow external connections for tuna tunnel
+    hmr: false, // Disable HMR for tunnel compatibility
+    strictPort: true,
     allowedHosts: [
       'localhost',
       '127.0.0.1',

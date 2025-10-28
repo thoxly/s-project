@@ -3,7 +3,7 @@ import { Box, Typography } from '@mui/material';
 import SearchBar from '../components/SearchBar';
 import FilterBar from '../components/FilterBar';
 import KnowledgeTabs from '../components/KnowledgeTabs';
-import KnowledgeGrid from '../components/Knowledgegrid';
+import KnowledgeGrid from '../components/KnowledgeGrid';
 import { KnowledgeModal } from '../components/KnowledgeModal';
 
 // Импортируем mock-данные

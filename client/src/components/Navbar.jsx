@@ -11,7 +11,7 @@ import {
 import {
   Dashboard as DashboardIcon,
   Person as PersonIcon,
-  Business as BusinessIcon,
+  AddBusiness as BusinessIcon,
   School as SchoolIcon,
   AccountTree as OrgIcon
 } from '@mui/icons-material'
