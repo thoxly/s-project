@@ -1,7 +1,8 @@
 const express = require('express');
+const User = require('../models/User');
 const router = express.Router();
 
-// Mock data for development
+// Mock data for development (fallback)
 const mockUsers = [
   {
     id: 1,
@@ -39,12 +40,25 @@ const mockUsers = [
 ];
 
 // Get all users
-router.get('/', (req, res) => {
-  res.json({
-    success: true,
-    data: mockUsers,
-    total: mockUsers.length
-  });
+router.get('/', async (req, res) => {
+  try {
+    const users = await User.find().sort({ createdAt: -1 });
+    res.json({
+      success: true,
+      data: users,
+      total: users.length,
+      source: 'MongoDB'
+    });
+  } catch (error) {
+    console.error('MongoDB error:', error);
+    // Fallback to mock data
+    res.json({
+      success: true,
+      data: mockUsers,
+      total: mockUsers.length,
+      source: 'Mock (MongoDB unavailable)'
+    });
+  }
 });
 
 // Get single user
@@ -88,6 +102,39 @@ router.get('/profile/current', (req, res) => {
     success: true,
     data: currentUser
   });
+});
+
+// Create new user
+router.post('/', async (req, res) => {
+  try {
+    const { name, position, email, phone, department, birthday, isManager } = req.body;
+    
+    const newUser = new User({
+      name,
+      position,
+      email,
+      phone,
+      department,
+      birthday: birthday ? new Date(birthday) : undefined,
+      isManager: isManager || false
+    });
+    
+    const savedUser = await newUser.save();
+    
+    res.status(201).json({
+      success: true,
+      data: savedUser,
+      message: 'User created successfully',
+      source: 'MongoDB'
+    });
+  } catch (error) {
+    console.error('MongoDB error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to create user',
+      details: error.message
+    });
+  }
 });
 
 module.exports = router;

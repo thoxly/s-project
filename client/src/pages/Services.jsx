@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Grid } from '@mui/material';
+import { Box, Typography, Grid, Container, Fade } from '@mui/material';
 import {
   DndContext,
   closestCenter,
@@ -15,6 +15,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
+import AssignmentIcon from '@mui/icons-material/Assignment';
 import ServiceColumn from '../components/ServiceColumn';
 import mockData from '../mock/services.json';
 
@@ -87,58 +88,94 @@ const Services = () => {
     : null;
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography sx={{ padding: '0 0 12px 0' }} variant="h4" gutterBottom>
-        Каталог заявок
-      </Typography>
-
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-        onDragCancel={handleDragCancel}
-      >
-        <Grid container spacing={3}>
-          {categories.map((category) => (
-            <Grid item xs={12} md={4} key={category.id}>
-              <SortableContext
-                items={category.services.map(s => s.id)}
-                strategy={verticalListSortingStrategy}
+    <Box sx={{ position: 'relative', overflow: 'hidden', minHeight: '100vh' }}>
+      <Container maxWidth="xl">
+        {/* Заголовок страницы */}
+        <Fade in timeout={500}>
+          <Box sx={{ mb: 4 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+              <Box
+                sx={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 3,
+                  background: 'linear-gradient(135deg, rgba(30, 60, 147, 0.1) 0%, rgba(30, 60, 147, 0.05) 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
               >
-                <ServiceColumn
-                  id={category.id}
-                  title={category.title}
-                  services={category.services}
-                />
-              </SortableContext>
-            </Grid>
-          ))}
-        </Grid>
-
-        {/* DragOverlay для плавного перетаскивания */}
-        <DragOverlay>
-          {activeService ? (
-            <Box
-              sx={{
-                width: 320,
-                borderRadius: 3,
-                background: 'white',
-                boxShadow: '0 6px 16px rgba(0, 0, 0, 0.2)',
-                p: 2,
-                cursor: 'grabbing',
-              }}
-            >
-              <Typography variant="h6" fontWeight={600}>
-                {activeService.title}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {activeService.desc}
-              </Typography>
+                <AssignmentIcon sx={{ fontSize: 32, color: 'primary.main' }} />
+              </Box>
+              <Box>
+                <Typography
+                  variant="h3"
+                  sx={{
+                    fontWeight: 700,
+                    background: 'linear-gradient(135deg, rgb(30, 60, 147) 0%, rgb(45, 85, 180) 100%)',
+                    backgroundClip: 'text',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                  }}
+                >
+                  Каталог заявок
+                </Typography>
+                <Typography variant="body1" color="text.secondary" sx={{ mt: 0.5 }}>
+                  Быстрый доступ к корпоративным сервисам
+                </Typography>
+              </Box>
             </Box>
-          ) : null}
-        </DragOverlay>
-      </DndContext>
+          </Box>
+        </Fade>
+
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          onDragCancel={handleDragCancel}
+        >
+          <Grid container spacing={3}>
+            {categories.map((category) => (
+              <Grid item xs={12} md={4} key={category.id}>
+                <SortableContext
+                  items={category.services.map(s => s.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <ServiceColumn
+                    id={category.id}
+                    title={category.title}
+                    services={category.services}
+                  />
+                </SortableContext>
+              </Grid>
+            ))}
+          </Grid>
+
+          {/* DragOverlay для плавного перетаскивания */}
+          <DragOverlay>
+            {activeService ? (
+              <Box
+                sx={{
+                  width: 320,
+                  borderRadius: 3,
+                  background: 'white',
+                  boxShadow: '0 6px 16px rgba(0, 0, 0, 0.2)',
+                  p: 2,
+                  cursor: 'grabbing',
+                }}
+              >
+                <Typography variant="h6" fontWeight={600}>
+                  {activeService.title}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {activeService.desc}
+                </Typography>
+              </Box>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
+      </Container>
     </Box>
   );
 };

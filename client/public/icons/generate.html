@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PWA Icon Generator</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .icon { margin: 10px; display: inline-block; }
+        canvas { border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+    <h1>PWA Icon Generator</h1>
+    <p>Right-click on each icon and "Save image as..." to download</p>
+    
+    <div id="icons"></div>
+
+    <script>
+        function generateIcon(size) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            
+            // Создаем градиент
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#1e3a8a');
+            gradient.addColorStop(1, '#1e40af');
+            
+            // Рисуем фон
+            ctx.fillStyle = gradient;
+            ctx.roundRect(0, 0, size, size, size * 0.15);
+            ctx.fill();
+            
+            // Рисуем букву С
+            ctx.fillStyle = 'white';
+            ctx.font = `bold ${size * 0.5}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('С', size / 2, size / 2);
+            
+            // Добавляем декоративные элементы
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.beginPath();
+            ctx.arc(size * 0.25, size * 0.25, size * 0.04, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(size * 0.75, size * 0.25, size * 0.03, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(size * 0.25, size * 0.75, size * 0.025, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(size * 0.75, size * 0.75, size * 0.035, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            return canvas;
+        }
+        
+        // Генерируем иконки разных размеров
+        const sizes = [16, 32, 72, 96, 128, 144, 152, 192, 384, 512];
+        const container = document.getElementById('icons');
+        
+        sizes.forEach(size => {
+            const div = document.createElement('div');
+            div.className = 'icon';
+            div.innerHTML = `<h3>${size}x${size}</h3>`;
+            
+            const canvas = generateIcon(size);
+            div.appendChild(canvas);
+            
+            container.appendChild(div);
+        });
+    </script>
+</body>
+</html>

@@ -60,8 +60,8 @@ const MessengerTab = () => {
     <>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
-            Мессенджер
+          <Typography variant="body1" color="text.secondary">
+            Общение с коллегами и руководителями
             {totalUnread > 0 && (
               <Chip 
                 label={totalUnread} 
@@ -70,9 +70,6 @@ const MessengerTab = () => {
                 sx={{ ml: 2, fontWeight: 600 }}
               />
             )}
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Общение с коллегами и руководителями
           </Typography>
         </Box>
       </Box>

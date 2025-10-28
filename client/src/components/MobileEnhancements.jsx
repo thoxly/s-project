@@ -103,13 +103,15 @@ const MobileEnhancements = () => {
             zIndex: 1000,
             background: 'linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%)',
             boxShadow: '0 8px 24px rgba(30, 58, 138, 0.4)',
+            width: { xs: 56, sm: 64 },
+            height: { xs: 56, sm: 64 },
             '&:hover': {
               background: 'linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%)',
               transform: 'scale(1.05)',
             }
           }}
         >
-          <InstallIcon />
+          <InstallIcon sx={{ fontSize: { xs: 24, sm: 28 } }} />
         </Fab>
       )}
 
@@ -126,13 +128,15 @@ const MobileEnhancements = () => {
             zIndex: 1000,
             background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
             boxShadow: '0 8px 24px rgba(5, 150, 105, 0.4)',
+            width: { xs: 56, sm: 64 },
+            height: { xs: 56, sm: 64 },
             '&:hover': {
               background: 'linear-gradient(135deg, #047857 0%, #065f46 100%)',
               transform: 'scale(1.05)',
             }
           }}
         >
-          <NotificationsIcon />
+          <NotificationsIcon sx={{ fontSize: { xs: 24, sm: 28 } }} />
         </Fab>
       )}
 

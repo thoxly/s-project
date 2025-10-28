@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
 import App from './App.jsx'
+import './styles/mobile.css'
 
 // MUI Theme configuration
 const theme = createTheme({
@@ -130,13 +131,25 @@ const theme = createTheme({
           boxShadow: 'none',
           fontFamily: '"Inter", "Segoe UI", "Roboto", sans-serif',
           letterSpacing: '0.01em',
+          minHeight: 44, // Минимальная высота для сенсорных устройств
           '&:hover': {
             boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+          },
+          '@media (hover: none) and (pointer: coarse)': {
+            minHeight: 48,
+            '&:hover': {
+              boxShadow: 'none',
+            },
           },
         },
         contained: {
           '&:hover': {
             boxShadow: '0 6px 16px rgba(0, 0, 0, 0.2)',
+          },
+          '@media (hover: none) and (pointer: coarse)': {
+            '&:hover': {
+              boxShadow: 'none',
+            },
           },
         },
       },
@@ -148,6 +161,11 @@ const theme = createTheme({
           boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06)',
           '&:hover': {
             boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06)',
+          },
+          '@media (hover: none) and (pointer: coarse)': {
+            '&:hover': {
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06)',
+            },
           },
         },
       },
@@ -177,6 +195,33 @@ const theme = createTheme({
           fontWeight: 400,
           fontFamily: '"Inter", "Segoe UI", "Roboto", sans-serif',
           letterSpacing: '0.01em',
+        },
+      },
+    },
+    MuiIconButton: {
+      styleOverrides: {
+        root: {
+          minHeight: 44,
+          minWidth: 44,
+          '@media (hover: none) and (pointer: coarse)': {
+            minHeight: 48,
+            minWidth: 48,
+            '&:hover': {
+              backgroundColor: 'transparent',
+            },
+          },
+        },
+      },
+    },
+    MuiFab: {
+      styleOverrides: {
+        root: {
+          minHeight: 48,
+          minWidth: 48,
+          '@media (hover: none) and (pointer: coarse)': {
+            minHeight: 56,
+            minWidth: 56,
+          },
         },
       },
     },

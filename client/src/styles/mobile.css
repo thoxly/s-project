@@ -1,0 +1,201 @@
+/* Мобильные улучшения для Portal S */
+
+/* Улучшения для сенсорных устройств */
+@media (hover: none) and (pointer: coarse) {
+  /* Увеличиваем области касания для мобильных устройств */
+  .MuiButton-root {
+    min-height: 44px !important;
+    min-width: 44px !important;
+  }
+  
+  .MuiIconButton-root {
+    min-height: 44px !important;
+    min-width: 44px !important;
+  }
+  
+  .MuiFab-root {
+    min-height: 48px !important;
+    min-width: 48px !important;
+  }
+  
+  /* Убираем hover эффекты на мобильных устройствах */
+  .MuiCard-root:hover {
+    transform: none !important;
+  }
+  
+  .MuiButton-root:hover {
+    transform: none !important;
+  }
+  
+  .MuiIconButton-root:hover {
+    transform: none !important;
+  }
+}
+
+/* Улучшения для очень маленьких экранов */
+@media (max-width: 360px) {
+  .MuiContainer-root {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+  
+  .MuiTypography-h6 {
+    font-size: 1rem !important;
+  }
+  
+  .MuiTypography-body1 {
+    font-size: 0.875rem !important;
+  }
+  
+  .MuiTypography-body2 {
+    font-size: 0.8rem !important;
+  }
+}
+
+/* Улучшения для средних мобильных экранов */
+@media (min-width: 361px) and (max-width: 480px) {
+  .MuiContainer-root {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+}
+
+/* Улучшения для планшетов */
+@media (min-width: 481px) and (max-width: 768px) {
+  .MuiContainer-root {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+}
+
+/* Анимации для мобильных устройств */
+@media (prefers-reduced-motion: no-preference) {
+  .mobile-smooth-scroll {
+    scroll-behavior: smooth;
+  }
+  
+  .mobile-fade-in {
+    animation: mobileFadeIn 0.3s ease-in-out;
+  }
+  
+  @keyframes mobileFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+/* Улучшения для темной темы на мобильных устройствах */
+@media (prefers-color-scheme: dark) {
+  .MuiCard-root {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
+  
+  .MuiPaper-root {
+    background-color: rgba(255, 255, 255, 0.03) !important;
+  }
+}
+
+/* Улучшения для высоких экранов (iPhone X и выше) */
+@supports (padding: max(0px)) {
+  .safe-area-padding {
+    padding-top: max(20px, env(safe-area-inset-top));
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
+}
+
+/* Улучшения для landscape режима на мобильных устройствах */
+@media (max-height: 500px) and (orientation: landscape) {
+  .MuiContainer-root {
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+  }
+  
+  .MuiCard-root {
+    margin-bottom: 8px !important;
+  }
+  
+  .MuiTypography-h6 {
+    margin-bottom: 8px !important;
+  }
+}
+
+/* Улучшения для очень широких экранов */
+@media (min-width: 1200px) {
+  .MuiContainer-root {
+    max-width: 1200px !important;
+  }
+}
+
+/* Улучшения для печати */
+@media print {
+  .MuiFab-root,
+  .mobile-only {
+    display: none !important;
+  }
+  
+  .MuiCard-root {
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+  }
+}
+
+/* Улучшения доступности */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Улучшения для высокого контраста */
+@media (prefers-contrast: high) {
+  .MuiCard-root {
+    border: 2px solid currentColor !important;
+  }
+  
+  .MuiButton-root {
+    border: 2px solid currentColor !important;
+  }
+}
+
+/* Улучшения для мобильной навигации */
+.mobile-nav-spacing {
+  padding-bottom: 80px;
+}
+
+/* Улучшения для drag and drop на мобильных устройствах */
+@media (hover: none) and (pointer: coarse) {
+  .dnd-handle {
+    touch-action: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+}
+
+/* Улучшения для скролла на мобильных устройствах */
+.mobile-scroll {
+  -webkit-overflow-scrolling: touch;
+  overflow-scrolling: touch;
+}
+
+/* Улучшения для фокуса на мобильных устройствах */
+.MuiButton-root:focus-visible,
+.MuiIconButton-root:focus-visible,
+.MuiFab-root:focus-visible {
+  outline: 2px solid #1976d2;
+  outline-offset: 2px;
+}

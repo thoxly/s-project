@@ -3,23 +3,18 @@ import {
   Grid,
   Typography,
   Box,
-  Chip,
-  Avatar,
-  Button,
-  AppBar,
-  Toolbar,
   Container,
   Fab,
   Tooltip,
   Card,
   CardContent,
   Zoom,
-  CircularProgress
+  CircularProgress,
+  Avatar,
+  useMediaQuery,
+  useTheme
 } from '@mui/material'
 import {
-  TrendingUp as TrendingUpIcon,
-  Notifications as NotificationsIcon,
-  Person as PersonIcon,
   Refresh as RefreshIcon,
   Settings as SettingsIcon
 } from '@mui/icons-material'
@@ -50,13 +45,16 @@ import { useDashboardState } from '../hooks/useDashboardState.jsx'
 
 const Dashboard = () => {
   const navigate = useNavigate()
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
+  const isTablet = useMediaQuery(theme.breakpoints.down('lg'))
   const { widgets, isLoading, isEditMode, reorderWidgets, toggleWidgetWidth, toggleEditMode, resetToDefault, getIconComponent } = useDashboardState()
   const [activeId, setActiveId] = React.useState(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8, // Требуем перемещение на 8px перед началом drag
+        distance: isMobile ? 12 : 8, // Увеличиваем расстояние для мобильных устройств
       },
     }),
     useSensor(KeyboardSensor, {
@@ -181,145 +179,35 @@ const Dashboard = () => {
 
   return (
     <Box>
-      {/* Header с логотипом и приветствием */}
-      <AppBar 
-        position="static" 
-        elevation={0}
-        sx={{ 
-          background: 'linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%)',
-          mb: 4,
-          borderRadius: 3,
-          overflow: 'hidden',
-          position: 'relative',
-          '&::before': {
-            content: '""',
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%)',
-            pointerEvents: 'none',
-          }
-        }}
-      >
-        <Container maxWidth="xl">
-          <Toolbar sx={{ py: { xs: 1, md: 2 }, flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 2, md: 0 } }}>
-            <Box display="flex" alignItems="center" flexGrow={1} sx={{ width: { xs: '100%', md: 'auto' } }}>
-              <Zoom in={true} timeout={600}>
-                <Avatar 
-                  sx={{ 
-                    bgcolor: 'white', 
-                    color: 'primary.main', 
-                    mr: 2, 
-                    width: { xs: 40, md: 48 }, 
-                    height: { xs: 40, md: 48 },
-                    fontSize: { xs: '1.2rem', md: '1.5rem' },
-                    fontWeight: 700,
-                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                    transition: 'transform 300ms ease',
-                    '&:hover': {
-                      transform: 'rotate(10deg) scale(1.1)',
-                    }
-                  }}
-                >
-                  С
-                </Avatar>
-              </Zoom>
-              <Box>
-                <Typography 
-                  variant="h4" 
-                  sx={{ 
-                    fontWeight: 700, 
-                    color: 'white', 
-                    fontSize: { xs: '1.5rem', md: '2.125rem' },
-                    textShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
-                    letterSpacing: '-0.02em',
-                  }}
-                >
-                  Добро пожаловать в Portal S 🚀
-                </Typography>
-                <Typography 
-                  variant="h6" 
-                  sx={{ 
-                    color: 'rgba(255, 255, 255, 0.9)', 
-                    fontSize: { xs: '0.875rem', md: '1.25rem' },
-                    textShadow: '0 1px 4px rgba(0, 0, 0, 0.1)',
-                  }}
-                >
-                  Корпоративный портал с интеграцией ELMA365
-                </Typography>
-              </Box>
-            </Box>
-            
-            <Box display="flex" gap={2} alignItems="center" flexWrap="wrap" sx={{ width: { xs: '100%', md: 'auto' }, justifyContent: { xs: 'center', md: 'flex-end' } }}>
-              <Chip 
-                icon={<TrendingUpIcon />} 
-                label="Система работает стабильно" 
-                sx={{ 
-                  color: 'white',
-                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                  backdropFilter: 'blur(10px)',
-                  '& .MuiChip-icon': { color: 'white' },
-                  display: { xs: 'none', sm: 'flex' },
-                  fontWeight: 500,
-                  transition: 'all 300ms ease',
-                  '&:hover': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-                    transform: 'translateY(-2px)',
-                  }
-                }}
-              />
-              <Chip 
-                icon={<NotificationsIcon />} 
-                label="3 новых уведомления" 
-                sx={{ 
-                  color: 'white',
-                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                  backdropFilter: 'blur(10px)',
-                  '& .MuiChip-icon': { color: 'white' },
-                  fontWeight: 500,
-                  transition: 'all 300ms ease',
-                  cursor: 'pointer',
-                  '&:hover': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-                    transform: 'translateY(-2px)',
-                  }
-                }}
-              />
-              <Button
-                variant="contained"
-                startIcon={<PersonIcon />}
-                onClick={() => navigate('/profile')}
-                sx={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                  color: 'white',
-                  borderRadius: 3,
-                  px: 3,
-                  fontWeight: 600,
-                  backdropFilter: 'blur(10px)',
-                  transition: 'all 300ms ease',
-                  '&:hover': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.35)',
-                    transform: 'translateY(-2px)',
-                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
-                  }
-                }}
-              >
-                Профиль
-              </Button>
-            </Box>
-          </Toolbar>
-        </Container>
-      </AppBar>
-
       {/* Основной контент */}
-      <Container maxWidth="xl">
+      <Container maxWidth="xl" sx={{ px: { xs: 1, sm: 2, md: 3 } }}>
+        {/* Приветствие прямо в теле страницы */}
+        <Typography 
+          variant={isMobile ? "h6" : "h6"} 
+          sx={{ 
+            color: 'text.primary',
+            fontWeight: 500,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            mb: { xs: 2, sm: 3 },
+            fontSize: { xs: '1.1rem', sm: '1.25rem' },
+            px: { xs: 1, sm: 0 }
+          }}
+        >
+          👋 Добро пожаловать, Иван!
+        </Typography>
+
         {/* Кнопка настроек справа сверху */}
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'flex-end', 
+          mb: { xs: 1, sm: 2 },
+          px: { xs: 1, sm: 0 }
+        }}>
           <Tooltip title={isEditMode ? "Выйти из режима редактирования" : "Настроить дашборд"} placement="left">
             <Fab
-              size="small"
+              size={isMobile ? "medium" : "small"}
               color={isEditMode ? "primary" : "default"}
               onClick={toggleEditMode}
               sx={{
@@ -328,13 +216,15 @@ const Dashboard = () => {
                   : '0 2px 8px rgba(0, 0, 0, 0.15)',
                 transition: 'all 300ms ease',
                 backgroundColor: isEditMode ? 'primary.main' : 'white',
+                width: { xs: 48, sm: 40 },
+                height: { xs: 48, sm: 40 },
                 '&:hover': {
-                  transform: 'scale(1.1) rotate(90deg)',
+                  transform: isMobile ? 'scale(1.05)' : 'scale(1.1) rotate(90deg)',
                   boxShadow: '0 6px 16px rgba(30, 58, 138, 0.5)',
                 }
               }}
             >
-              <SettingsIcon sx={{ fontSize: 20 }} />
+              <SettingsIcon sx={{ fontSize: { xs: 24, sm: 20 } }} />
             </Fab>
           </Tooltip>
         </Box>
@@ -350,15 +240,16 @@ const Dashboard = () => {
             <SortableContext items={widgets.map(w => w.id)} strategy={verticalListSortingStrategy}>
               <Box
                 sx={{
-                  minHeight: 400,
-                  borderRadius: 4,
+                  minHeight: { xs: 300, sm: 400 },
+                  borderRadius: { xs: 2, sm: 4 },
                   background: 'linear-gradient(135deg, rgba(30, 58, 138, 0.02) 0%, rgba(30, 64, 175, 0.01) 100%)',
                   border: '3px dashed',
                   borderColor: activeId ? 'primary.main' : 'primary.light',
-                  p: 3,
+                  p: { xs: 2, sm: 3 },
                   transition: 'all 400ms cubic-bezier(0.4, 0, 0.2, 1)',
                   position: 'relative',
                   overflow: 'hidden',
+                  mx: { xs: 1, sm: 0 },
                   '&::before': {
                     content: '""',
                     position: 'absolute',
@@ -379,16 +270,18 @@ const Dashboard = () => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    mb: 3,
-                    gap: 2,
+                    mb: { xs: 2, sm: 3 },
+                    gap: { xs: 1.5, sm: 2 },
                     position: 'relative',
                     zIndex: 1,
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    textAlign: { xs: 'center', sm: 'left' }
                   }}
                 >
                   <Box
                     sx={{
-                      width: 40,
-                      height: 40,
+                      width: { xs: 36, sm: 40 },
+                      height: { xs: 36, sm: 40 },
                       borderRadius: '50%',
                       background: 'linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%)',
                       display: 'flex',
@@ -397,26 +290,29 @@ const Dashboard = () => {
                       boxShadow: '0 4px 12px rgba(30, 58, 138, 0.3)',
                     }}
                   >
-                    <SettingsIcon sx={{ color: 'white', fontSize: 20 }} />
+                    <SettingsIcon sx={{ color: 'white', fontSize: { xs: 18, sm: 20 } }} />
                   </Box>
                   <Typography 
-                    variant="h6" 
+                    variant={isMobile ? "body1" : "h6"}
                     sx={{ 
                       fontWeight: 700,
                       background: 'linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%)',
                       backgroundClip: 'text',
                       WebkitBackgroundClip: 'text',
                       WebkitTextFillColor: 'transparent',
+                      fontSize: { xs: '0.9rem', sm: '1.25rem' },
+                      lineHeight: { xs: 1.3, sm: 1.2 }
                     }}
                   >
-                    Режим редактирования • Перетаскивайте блоки
+                    {isMobile ? 'Режим редактирования' : 'Режим редактирования • Перетаскивайте блоки'}
                   </Typography>
                 </Box>
-                <Grid container spacing={{ xs: 2, md: 3 }}>
+                <Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
                   {widgets.map((widget, index) => (
                     <Grid 
                       item 
                       xs={12} 
+                      sm={widget.width === 2 ? 12 : 6} 
                       md={widget.width === 2 ? 12 : 6} 
                       lg={widget.width === 2 ? 8 : 4} 
                       key={widget.id}
@@ -502,16 +398,18 @@ const Dashboard = () => {
         ) : (
           <Box
             sx={{
-              minHeight: 400,
+              minHeight: { xs: 300, sm: 400 },
               borderRadius: 2,
-              transition: 'background-color 0.2s ease-in-out'
+              transition: 'background-color 0.2s ease-in-out',
+              mx: { xs: 1, sm: 0 }
             }}
           >
-            <Grid container spacing={{ xs: 2, md: 3 }}>
+            <Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
               {widgets.map((widget, index) => (
                 <Grid 
                   item 
                   xs={12} 
+                  sm={widget.width === 2 ? 12 : 6} 
                   md={widget.width === 2 ? 12 : 6} 
                   lg={widget.width === 2 ? 8 : 4} 
                   key={widget.id}
@@ -549,25 +447,25 @@ const Dashboard = () => {
               onClick={resetToDefault}
               sx={{
                 position: 'fixed',
-                bottom: 24,
-                right: 24,
+                bottom: { xs: 16, sm: 24 },
+                right: { xs: 16, sm: 24 },
                 zIndex: 1000,
-                width: 64,
-                height: 64,
+                width: { xs: 56, sm: 64 },
+                height: { xs: 56, sm: 64 },
                 background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
                 boxShadow: '0 8px 24px rgba(5, 150, 105, 0.4)',
                 transition: 'all 300ms ease',
                 '&:hover': {
-                  transform: 'scale(1.1) rotate(180deg)',
+                  transform: isMobile ? 'scale(1.05)' : 'scale(1.1) rotate(180deg)',
                   boxShadow: '0 12px 32px rgba(5, 150, 105, 0.5)',
                   background: 'linear-gradient(135deg, #047857 0%, #065f46 100%)',
                 },
                 '&:active': {
-                  transform: 'scale(0.95) rotate(180deg)',
+                  transform: isMobile ? 'scale(0.95)' : 'scale(0.95) rotate(180deg)',
                 }
               }}
             >
-              <RefreshIcon sx={{ fontSize: 28 }} />
+              <RefreshIcon sx={{ fontSize: { xs: 24, sm: 28 } }} />
             </Fab>
           </Tooltip>
         </Zoom>

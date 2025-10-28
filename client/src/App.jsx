@@ -7,6 +7,7 @@ import Profile from './pages/Profile'
 import Services from './pages/Services'
 import KnowledgeBase from './pages/KnowledgeBase'
 import OrgStructure from './pages/OrgStructure'
+import MobileEnhancements from './components/MobileEnhancements'
 import { GlobalStateProvider } from './store/GlobalContext'
 
 function App() {
@@ -35,6 +36,9 @@ function App() {
           <Route path="/org" element={<OrgStructure />} />
         </Routes>
       </Container>
+      
+      {/* Мобильные улучшения */}
+      <MobileEnhancements />
     </Box>
     </GlobalStateProvider>
   )
