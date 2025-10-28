@@ -4,11 +4,26 @@ import react from '@vitejs/plugin-react'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
+  define: {
+    'process.env.NODE_ENV': '"development"'
+  },
+  optimizeDeps: {
+    include: ['react', 'react-dom', '@mui/material', '@mui/icons-material']
+  },
   server: {
     port: 5173,
     host: '0.0.0.0', // Allow external connections for tuna tunnel
-    hmr: false, // Disable HMR for tunnel compatibility
+    hmr: {
+      port: 5173,
+      host: 'localhost',
+      overlay: true, // Show error overlay
+      clientPort: 5173
+    },
     strictPort: true,
+    watch: {
+      usePolling: false, // Better for macOS
+      interval: 1000
+    },
     allowedHosts: [
       'localhost',
       '127.0.0.1',

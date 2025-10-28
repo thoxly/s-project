@@ -3,23 +3,16 @@ import {
   Grid,
   Typography,
   Box,
-  Chip,
-  Avatar,
-  Button,
-  AppBar,
-  Toolbar,
   Container,
   Fab,
   Tooltip,
   Card,
   CardContent,
   Zoom,
-  CircularProgress
+  CircularProgress,
+  Avatar
 } from '@mui/material'
 import {
-  TrendingUp as TrendingUpIcon,
-  Notifications as NotificationsIcon,
-  Person as PersonIcon,
   Refresh as RefreshIcon,
   Settings as SettingsIcon
 } from '@mui/icons-material'
@@ -47,28 +40,11 @@ import BirthdayList from '../components/BirthdayList'
 import QuickLinks from '../components/QuickLinks'
 import DraggableCard from '../components/DraggableCard'
 import { useDashboardState } from '../hooks/useDashboardState.jsx'
-import useTouchGestures from '../hooks/useTouchGestures.jsx'
 
 const Dashboard = () => {
   const navigate = useNavigate()
   const { widgets, isLoading, isEditMode, reorderWidgets, toggleWidgetWidth, toggleEditMode, resetToDefault, getIconComponent } = useDashboardState()
   const [activeId, setActiveId] = React.useState(null)
-  
-  // Touch gestures для мобильных устройств
-  const { handleSwipe, longPressHandlers } = useTouchGestures()
-  
-  // Обработка свайпов
-  React.useEffect(() => {
-    handleSwipe((direction) => {
-      if (direction === 'left' && !isEditMode) {
-        // Свайп влево - включить режим редактирования
-        toggleEditMode()
-      } else if (direction === 'right' && isEditMode) {
-        // Свайп вправо - выключить режим редактирования
-        toggleEditMode()
-      }
-    })
-  }, [handleSwipe, isEditMode, toggleEditMode])
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -197,167 +173,24 @@ const Dashboard = () => {
   }
 
   return (
-    <Box
-      {...longPressHandlers}
-      onTouchStartLongPress={() => toggleEditMode()}
-    >
-      {/* Header с логотипом и приветствием */}
-      <AppBar 
-        position="static" 
-        elevation={0}
-        sx={{ 
-          background: 'linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%)',
-          mb: 4,
-          borderRadius: 3,
-          overflow: 'hidden',
-          position: 'relative',
-          '&::before': {
-            content: '""',
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%)',
-            pointerEvents: 'none',
-          }
-        }}
-      >
-        <Container maxWidth="xl">
-          <Toolbar sx={{ 
-            py: { xs: 1, md: 2 }, 
-            flexDirection: { xs: 'column', md: 'row' }, 
-            gap: { xs: 2, md: 0 },
-            minHeight: { xs: 'auto', md: 64 }
-          }}>
-            <Box display="flex" alignItems="center" flexGrow={1} sx={{ 
-              width: { xs: '100%', md: 'auto' },
-              flexDirection: { xs: 'column', sm: 'row' },
-              textAlign: { xs: 'center', sm: 'left' }
-            }}>
-              <Zoom in={true} timeout={600}>
-                <Avatar 
-                  sx={{ 
-                    bgcolor: 'white', 
-                    color: 'primary.main', 
-                    mr: { xs: 0, sm: 2 }, 
-                    mb: { xs: 1, sm: 0 },
-                    width: { xs: 48, sm: 40, md: 48 }, 
-                    height: { xs: 48, sm: 40, md: 48 },
-                    fontSize: { xs: '1.5rem', sm: '1.2rem', md: '1.5rem' },
-                    fontWeight: 700,
-                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                    transition: 'transform 300ms ease',
-                    '&:hover': {
-                      transform: 'rotate(10deg) scale(1.1)',
-                    }
-                  }}
-                >
-                  С
-                </Avatar>
-              </Zoom>
-              <Box sx={{ flex: 1 }}>
-                <Typography 
-                  variant="h4" 
-                  sx={{ 
-                    fontWeight: 700, 
-                    color: 'white', 
-                    fontSize: { xs: '1.25rem', sm: '1.5rem', md: '2.125rem' },
-                    textShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
-                    letterSpacing: '-0.02em',
-                    lineHeight: 1.2,
-                  }}
-                >
-                  Добро пожаловать в Portal S 🚀
-                </Typography>
-                <Typography 
-                  variant="h6" 
-                  sx={{ 
-                    color: 'rgba(255, 255, 255, 0.9)', 
-                    fontSize: { xs: '0.75rem', sm: '0.875rem', md: '1.25rem' },
-                    textShadow: '0 1px 4px rgba(0, 0, 0, 0.1)',
-                    mt: 0.5,
-                  }}
-                >
-                  Корпоративный портал с интеграцией ELMA365
-                </Typography>
-              </Box>
-            </Box>
-            
-            <Box display="flex" gap={1} alignItems="center" flexWrap="wrap" sx={{ 
-              width: { xs: '100%', md: 'auto' }, 
-              justifyContent: { xs: 'center', md: 'flex-end' },
-              flexDirection: { xs: 'column', sm: 'row' }
-            }}>
-              <Chip 
-                icon={<TrendingUpIcon />} 
-                label="Система работает стабильно" 
-                sx={{ 
-                  color: 'white',
-                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                  backdropFilter: 'blur(10px)',
-                  '& .MuiChip-icon': { color: 'white' },
-                  display: { xs: 'none', sm: 'flex' },
-                  fontWeight: 500,
-                  transition: 'all 300ms ease',
-                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                  height: { xs: 28, sm: 32 },
-                  '&:hover': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-                    transform: 'translateY(-2px)',
-                  }
-                }}
-              />
-              <Chip 
-                icon={<NotificationsIcon />} 
-                label="3 новых уведомления" 
-                sx={{ 
-                  color: 'white',
-                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                  backdropFilter: 'blur(10px)',
-                  '& .MuiChip-icon': { color: 'white' },
-                  fontWeight: 500,
-                  transition: 'all 300ms ease',
-                  cursor: 'pointer',
-                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                  height: { xs: 28, sm: 32 },
-                  '&:hover': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-                    transform: 'translateY(-2px)',
-                  }
-                }}
-              />
-              <Button
-                variant="contained"
-                startIcon={<PersonIcon />}
-                onClick={() => navigate('/profile')}
-                sx={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                  color: 'white',
-                  borderRadius: 3,
-                  px: { xs: 2, sm: 3 },
-                  py: { xs: 1, sm: 1.5 },
-                  fontWeight: 600,
-                  backdropFilter: 'blur(10px)',
-                  transition: 'all 300ms ease',
-                  fontSize: { xs: '0.875rem', sm: '1rem' },
-                  minWidth: { xs: 'auto', sm: 'auto' },
-                  '&:hover': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.35)',
-                    transform: 'translateY(-2px)',
-                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
-                  }
-                }}
-              >
-                Профиль
-              </Button>
-            </Box>
-          </Toolbar>
-        </Container>
-      </AppBar>
-
+    <Box>
       {/* Основной контент */}
       <Container maxWidth="xl">
+        {/* Приветствие прямо в теле страницы */}
+        <Typography 
+          variant="h6" 
+          sx={{ 
+            color: 'text.primary',
+            fontWeight: 500,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            mb: 3,
+          }}
+        >
+          👋 Добро пожаловать, Иван!
+        </Typography>
+
         {/* Кнопка настроек справа сверху */}
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
           <Tooltip title={isEditMode ? "Выйти из режима редактирования" : "Настроить дашборд"} placement="left">
@@ -455,12 +288,11 @@ const Dashboard = () => {
                     Режим редактирования • Перетаскивайте блоки
                   </Typography>
                 </Box>
-                <Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
+                <Grid container spacing={{ xs: 2, md: 3 }}>
                   {widgets.map((widget, index) => (
                     <Grid 
                       item 
                       xs={12} 
-                      sm={widget.width === 2 ? 12 : 6} 
                       md={widget.width === 2 ? 12 : 6} 
                       lg={widget.width === 2 ? 8 : 4} 
                       key={widget.id}
@@ -551,12 +383,11 @@ const Dashboard = () => {
               transition: 'background-color 0.2s ease-in-out'
             }}
           >
-            <Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
+            <Grid container spacing={{ xs: 2, md: 3 }}>
               {widgets.map((widget, index) => (
                 <Grid 
                   item 
                   xs={12} 
-                  sm={widget.width === 2 ? 12 : 6} 
                   md={widget.width === 2 ? 12 : 6} 
                   lg={widget.width === 2 ? 8 : 4} 
                   key={widget.id}
@@ -594,11 +425,11 @@ const Dashboard = () => {
               onClick={resetToDefault}
               sx={{
                 position: 'fixed',
-                bottom: { xs: 16, sm: 24 },
-                right: { xs: 16, sm: 24 },
+                bottom: 24,
+                right: 24,
                 zIndex: 1000,
-                width: { xs: 56, sm: 64 },
-                height: { xs: 56, sm: 64 },
+                width: 64,
+                height: 64,
                 background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
                 boxShadow: '0 8px 24px rgba(5, 150, 105, 0.4)',
                 transition: 'all 300ms ease',
@@ -612,7 +443,7 @@ const Dashboard = () => {
                 }
               }}
             >
-              <RefreshIcon sx={{ fontSize: { xs: 24, sm: 28 } }} />
+              <RefreshIcon sx={{ fontSize: 28 }} />
             </Fab>
           </Tooltip>
         </Zoom>

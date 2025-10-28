@@ -39,22 +39,29 @@ const QuickLinks = () => {
       })
   }, [])
 
-  const getIcon = (iconName) => {
+  const getIcon = (iconName, color = 'primary') => {
+    const iconProps = {
+      sx: { 
+        color: `${color}.main`,
+        fontSize: 20,
+      }
+    }
+    
     switch (iconName) {
       case 'Assignment':
-        return <AssignmentIcon />
+        return <AssignmentIcon {...iconProps} />
       case 'LibraryBooks':
-        return <LibraryBooksIcon />
+        return <LibraryBooksIcon {...iconProps} />
       case 'Business':
-        return <BusinessIcon />
+        return <BusinessIcon {...iconProps} />
       case 'Person':
-        return <PersonIcon />
+        return <PersonIcon {...iconProps} />
       case 'Support':
-        return <SupportIcon />
+        return <SupportIcon {...iconProps} />
       case 'Event':
-        return <EventIcon />
+        return <EventIcon {...iconProps} />
       default:
-        return <LinkIcon />
+        return <LinkIcon {...iconProps} />
     }
   }
 
@@ -78,7 +85,7 @@ const QuickLinks = () => {
               <Button
                 variant="outlined"
                 fullWidth
-                startIcon={getIcon(link.icon)}
+                startIcon={getIcon(link.icon, link.color)}
                 onClick={() => handleLinkClick(link.path)}
                 sx={{ 
                   py: { xs: 1, sm: 1.5 },
@@ -87,11 +94,16 @@ const QuickLinks = () => {
                   borderRadius: 2,
                   textTransform: 'none',
                   minHeight: { xs: 60, sm: 80 },
+                  borderColor: `${link.color}.main`,
+                  color: `${link.color}.main`,
                   '&:hover': {
                     backgroundColor: `${link.color}.main`,
                     color: 'white',
                     transform: 'translateY(-2px)',
-                    boxShadow: `0 4px 12px rgba(0, 0, 0, 0.15)`
+                    boxShadow: `0 4px 12px ${link.color === 'primary' ? 'rgba(30, 58, 138, 0.3)' : 'rgba(0, 0, 0, 0.15)'}`,
+                    '& .MuiSvgIcon-root': {
+                      color: 'white',
+                    }
                   },
                   transition: 'all 0.2s ease-in-out'
                 }}

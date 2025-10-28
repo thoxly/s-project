@@ -6,6 +6,23 @@ const router = express.Router();
 const ELMA_API_URL = process.env.ELMA_API_URL;
 const ELMA_TOKEN = process.env.ELMA_TOKEN;
 
+router.post('/get_data', async (req, res) => {
+  try {
+    const response = await fetch('https://og4d3xrizqpay.elma365.ru/api/extensions/583d4eea-7f06-47fd-b078-a0caf4f83095/script/post_articles', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer 94803282-2c5f-44f1-a57f-d59552040232`,
+      },
+    });
+
+    const data = await response.json();
+    console.log(data)
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 // Create support request in ELMA365
 router.post('/support', async (req, res) => {
   try {

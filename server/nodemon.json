@@ -1,12 +1,14 @@
 {
   "watch": ["src"],
   "ext": "js,json",
-  "ignore": ["src/**/*.test.js", "node_modules"],
-  "delay": 1000,
+  "ignore": ["src/**/*.test.js", "node_modules", "dist", "build"],
+  "delay": 500,
   "env": {
     "NODE_ENV": "development"
   },
   "verbose": true,
   "restartable": "rs",
-  "colours": true
+  "colours": true,
+  "legacyWatch": false,
+  "signal": "SIGTERM"
 }

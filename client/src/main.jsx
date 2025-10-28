@@ -4,7 +4,6 @@ import { BrowserRouter } from 'react-router-dom'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
 import App from './App.jsx'
-import { registerServiceWorker } from './utils/pwa.js'
 
 // MUI Theme configuration
 const theme = createTheme({
@@ -64,92 +63,56 @@ const theme = createTheme({
     },
   },
   typography: {
-    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+    fontFamily: '"Inter", "Segoe UI", "Roboto", "Helvetica", "Arial", sans-serif',
     h1: {
       fontSize: '2.5rem',
-      fontWeight: 700,
+      fontWeight: 300,
       lineHeight: 1.2,
-      letterSpacing: '-0.025em',
-      '@media (max-width: 768px)': {
-        fontSize: '2rem',
-      },
-      '@media (max-width: 480px)': {
-        fontSize: '1.75rem',
-      },
+      letterSpacing: '0.01em',
     },
     h2: {
       fontSize: '2rem',
-      fontWeight: 600,
+      fontWeight: 300,
       lineHeight: 1.3,
-      letterSpacing: '-0.025em',
-      '@media (max-width: 768px)': {
-        fontSize: '1.75rem',
-      },
-      '@media (max-width: 480px)': {
-        fontSize: '1.5rem',
-      },
+      letterSpacing: '0.01em',
     },
     h3: {
       fontSize: '1.5rem',
-      fontWeight: 600,
+      fontWeight: 400,
       lineHeight: 1.4,
-      '@media (max-width: 768px)': {
-        fontSize: '1.375rem',
-      },
-      '@media (max-width: 480px)': {
-        fontSize: '1.25rem',
-      },
+      letterSpacing: '0.01em',
     },
     h4: {
       fontSize: '1.25rem',
-      fontWeight: 600,
+      fontWeight: 400,
       lineHeight: 1.4,
-      '@media (max-width: 768px)': {
-        fontSize: '1.125rem',
-      },
+      letterSpacing: '0.01em',
     },
     h5: {
       fontSize: '1.125rem',
-      fontWeight: 600,
+      fontWeight: 400,
       lineHeight: 1.4,
-      '@media (max-width: 768px)': {
-        fontSize: '1rem',
-      },
+      letterSpacing: '0.01em',
     },
     h6: {
       fontSize: '1rem',
-      fontWeight: 600,
+      fontWeight: 400,
       lineHeight: 1.4,
-      '@media (max-width: 768px)': {
-        fontSize: '0.875rem',
-      },
+      letterSpacing: '0.01em',
     },
     body1: {
       fontSize: '1rem',
       lineHeight: 1.6,
-      '@media (max-width: 768px)': {
-        fontSize: '0.875rem',
-      },
+      fontWeight: 400,
     },
     body2: {
       fontSize: '0.875rem',
       lineHeight: 1.6,
-      '@media (max-width: 768px)': {
-        fontSize: '0.8125rem',
-      },
+      fontWeight: 400,
     },
     button: {
-      fontWeight: 500,
+      fontWeight: 400,
       textTransform: 'none',
-    },
-  },
-  breakpoints: {
-    values: {
-      xs: 0,
-      sm: 600,
-      md: 900,
-      lg: 1200,
-      xl: 1536,
     },
   },
   shape: {
@@ -162,9 +125,11 @@ const theme = createTheme({
         root: {
           borderRadius: 8,
           padding: '8px 16px',
-          fontWeight: 500,
+          fontWeight: 400,
           textTransform: 'none',
           boxShadow: 'none',
+          fontFamily: '"Inter", "Segoe UI", "Roboto", sans-serif',
+          letterSpacing: '0.01em',
           '&:hover': {
             boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
           },
@@ -209,7 +174,9 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 8,
-          fontWeight: 500,
+          fontWeight: 400,
+          fontFamily: '"Inter", "Segoe UI", "Roboto", sans-serif',
+          letterSpacing: '0.01em',
         },
       },
     },
@@ -226,8 +193,3 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     </ThemeProvider>
   </React.StrictMode>,
 )
-
-// Register Service Worker for PWA
-if (import.meta.env.PROD) {
-  registerServiceWorker();
-}
