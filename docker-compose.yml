@@ -1,0 +1,85 @@
+version: '3.8'
+
+services:
+  # MongoDB база данных
+  mongodb:
+    image: mongo:7.0
+    container_name: portal-s-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-password123}
+      MONGO_INITDB_DATABASE: portal-s
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - portal-network
+    command: mongod --auth
+
+  # Backend сервер
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: portal-s-backend
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - MONGODB_URI=mongodb://${MONGO_ROOT_USERNAME:-admin}:${MONGO_ROOT_PASSWORD:-password123}@mongodb:27017/portal-s?authSource=admin
+      - CLIENT_URL=${CLIENT_URL:-https://surius.ru.tuna.am}
+      - API_URL=${API_URL:-https://api-surius.ru.tuna.am}
+      - ELMA_API_URL=${ELMA_API_URL}
+      - ELMA_TOKEN=${ELMA_TOKEN}
+      - ELMA_SECRET_KEY=${ELMA_SECRET_KEY}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongodb
+    networks:
+      - portal-network
+
+  # Nginx для проксирования и статики
+  nginx:
+    image: nginx:alpine
+    container_name: portal-s-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
+    networks:
+      - portal-network
+
+  # Tuna tunnel для внешнего доступа
+  tuna-tunnel:
+    image: alpine:latest
+    container_name: portal-s-tunnel
+    restart: unless-stopped
+    environment:
+      - TUNA_TOKEN=${TUNA_TOKEN}
+    command: >
+      sh -c "
+        apk add --no-cache curl &&
+        curl -L https://github.com/tuna/tuna/releases/latest/download/tuna_linux_arm64.tar.gz | tar -xz &&
+        ./tuna http nginx:80 --domain=surius.ru.tuna.am --token=$$TUNA_TOKEN
+      "
+    depends_on:
+      - nginx
+    networks:
+      - portal-network
+    profiles:
+      - tunnel
+
+volumes:
+  mongodb_data:
+    driver: local
+
+networks:
+  portal-network:
+    driver: bridge

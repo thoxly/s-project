@@ -8,9 +8,11 @@ import Services from './pages/Services'
 import KnowledgeBase from './pages/KnowledgeBase'
 import OrgStructure from './pages/OrgStructure'
 import MobileEnhancements from './components/MobileEnhancements'
+import { GlobalStateProvider } from './store/GlobalContext'
 
 function App() {
   return (
+    <GlobalStateProvider>
     <Box sx={{ 
       display: 'flex', 
       flexDirection: 'column', 
@@ -38,6 +40,7 @@ function App() {
       {/* Мобильные улучшения */}
       <MobileEnhancements />
     </Box>
+    </GlobalStateProvider>
   )
 }
 

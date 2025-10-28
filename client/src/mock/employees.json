@@ -1,0 +1,222 @@
+{
+  "1": [
+    {
+      "id": 1,
+      "fullName": "Глава администрации федеральной территории «Сириус»",
+      "position": "Глава администрации",
+      "avatarUrl": "https://sirius-ft.ru/upload/iblock/0ac/bqsll2y7e5l1zh20uyon8je2lfdblqyy.webp",
+      "phone": "+7 (999) 123-45-67",
+      "work_phone": "101",
+      "email": "glava@sirius-ft.ru"
+    }
+  ],
+  "2": [
+    {
+      "id": 2,
+      "fullName": "Артем Сергеевич Столяров",
+      "position": "Помощник главы администрации",
+      "avatarUrl": "https://sirius-ft.ru/upload/iblock/78c/y18xn3h97bbj02c5mvyo6012f51nzb36.webp",
+      "phone": "+7 (999) 234-56-78",
+      "work_phone": "102",
+      "email": "artem.stolyarov@example.com"
+    }
+  ],
+  "3": [
+    {
+      "id": 3,
+      "fullName": "Омельченко Наталия Валерьевна",
+      "position": "Руководитель аппарата администрации",
+      "avatarUrl": "https://sirius-ft.ru/upload/iblock/03c/qsbr52yh07qw5u2xzn029yvsjfa8ckrn.jpg",
+      "phone": "+7 (999) 345-67-89",
+      "work_phone": "103",
+      "email": "natalia.omelchenko@example.com"
+    }
+  ],
+  "4": [
+    {
+      "id": 4,
+      "fullName": "Сотрудник аппарата администрации",
+      "position": "Специалист",
+      "avatarUrl": null,
+      "phone": "+7 (999) 345-67-90",
+      "work_phone": "104",
+      "email": "apparat@sirius-ft.ru"
+    }
+  ],
+  "5": [
+    {
+      "id": 5,
+      "fullName": "Наталья Владимировна Шаргаева",
+      "position": "Директор правового департамента",
+      "avatarUrl": null,
+      "phone": "+7 (999) 456-78-90",
+      "work_phone": "105",
+      "email": "natalia.shargaeva@example.com"
+    }
+  ],
+  "6": [
+    {
+      "id": 6,
+      "fullName": "Надежда Сергеевна Казанцева",
+      "position": "Заместитель главы администрации – директор департамента экономического развития",
+      "avatarUrl": "https://sirius-ft.ru/upload/iblock/c23/aupilqndh2k4343sblqajwkj17neeibt.jpg",
+      "phone": "+7 (999) 567-89-01",
+      "work_phone": "106",
+      "email": "nadezhda.kazantseva@example.com"
+    }
+  ],
+  "7": [
+    {
+      "id": 7,
+      "fullName": "Сотрудник департамента экономического развития",
+      "position": "Специалист",
+      "avatarUrl": null,
+      "phone": "+7 (999) 567-89-02",
+      "work_phone": "107",
+      "email": "econom@sirius-ft.ru"
+    }
+  ],
+  "8": [
+    {
+      "id": 8,
+      "fullName": "Верташ Надежда Витальевна",
+      "position": "Директор департамента финансов",
+      "avatarUrl": "https://sirius-ft.ru/upload/iblock/789/n5qfzyful6ad6esbj2l4ho81grv5x1l8.jpg",
+      "phone": "+7 (999) 678-90-12",
+      "work_phone": "108",
+      "email": "nadezhda.vertash@example.com"
+    }
+  ],
+  "9": [
+    {
+      "id": 9,
+      "fullName": "Митькин Антон Борисович",
+      "position": "Исполняющий обязанности директора департамента комплексного развития городской среды",
+      "avatarUrl": null,
+      "phone": "+7 (999) 789-01-23",
+      "work_phone": "109",
+      "email": "anton.mitkin@example.com"
+    }
+  ],
+  "10": [
+    {
+      "id": 10,
+      "fullName": "Сергей Юрьевич Фадеев",
+      "position": "Заместитель главы администрации – директор департамента имущественных отношений",
+      "avatarUrl": "https://sirius-ft.ru/upload/iblock/bb2/2gwpstnj0swug300feenyrp4zfs69yo2.webp",
+      "phone": "+7 (999) 890-12-34",
+      "work_phone": "110",
+      "email": "sergey.fadeev@example.com"
+    }
+  ],
+  "11": [
+    {
+      "id": 11,
+      "fullName": "Сотрудник департамента имущественных отношений",
+      "position": "Специалист",
+      "avatarUrl": null,
+      "phone": "+7 (999) 890-12-35",
+      "work_phone": "111",
+      "email": "property@sirius-ft.ru"
+    }
+  ],
+  "12": [
+    {
+      "id": 12,
+      "fullName": "Гинтер Евгения Владимировна",
+      "position": "Директор департамента архитектуры и градостроительной деятельности",
+      "avatarUrl": "https://sirius-ft.ru/upload/iblock/f44/326rgfhg57x9m354uxt6ymzfs8x3trbq.webp",
+      "phone": "+7 (999) 901-23-45",
+      "work_phone": "112",
+      "email": "evgenia.ginter@example.com"
+    }
+  ],
+  "13": [
+    {
+      "id": 13,
+      "fullName": "Новокрещенов Илья Владимирович",
+      "position": "Заместитель главы администрации – директор департамента научно-технологического развития, образования, культуры, молодежной политики и спорта",
+      "avatarUrl": "https://sirius-ft.ru/upload/iblock/2d4/cmpmkbg68vn255kwskvw06za8xzry0l1.jpg",
+      "phone": "+7 (999) 012-34-56",
+      "work_phone": "113",
+      "email": "ilya.novokreschenov@example.com"
+    }
+  ],
+  "14": [
+    {
+      "id": 14,
+      "fullName": "Сотрудник департамента научно-технологического развития",
+      "position": "Специалист",
+      "avatarUrl": null,
+      "phone": "+7 (999) 012-34-57",
+      "work_phone": "114",
+      "email": "science@sirius-ft.ru"
+    }
+  ],
+  "15": [
+    {
+      "id": 15,
+      "fullName": "Наталья Юрьевна Шкалова",
+      "position": "Директор департамента труда и социального развития",
+      "avatarUrl": "https://sirius-ft.ru/upload/iblock/857/2mv9137eiyu3eqgoac1zyih0vh78srs7.jpg",
+      "phone": "+7 (999) 123-45-68",
+      "work_phone": "115",
+      "email": "natalia.shkalova@example.com"
+    }
+  ],
+  "16": [
+    {
+      "id": 16,
+      "fullName": "Михайлов Сергей Евгеньевич",
+      "position": "Исполняющий обязанности директора департамента внутренней политики и организационной деятельности",
+      "avatarUrl": "https://sirius-ft.ru/upload/iblock/0ac/bqsll2y7e5l1zh20uyon8je2lfdblqyy.webp",
+      "phone": "+7 (999) 234-56-79",
+      "work_phone": "116",
+      "email": "sergey.mikhailov@example.com"
+    }
+  ],
+  "17": [
+    {
+      "id": 17,
+      "fullName": "Начальник сектора по организации деятельности антитеррористической комиссии",
+      "position": "Начальник сектора",
+      "avatarUrl": null,
+      "phone": "+7 (999) 234-56-80",
+      "work_phone": "117",
+      "email": "antiterror@sirius-ft.ru"
+    }
+  ],
+  "18": [
+    {
+      "id": 18,
+      "fullName": "Начальник сектора по защите государственной тайны",
+      "position": "Начальник сектора",
+      "avatarUrl": null,
+      "phone": "+7 (999) 234-56-81",
+      "work_phone": "118",
+      "email": "secrecy@sirius-ft.ru"
+    }
+  ],
+  "19": [
+    {
+      "id": 19,
+      "fullName": "Начальник сектора по профилактике коррупционных правонарушений",
+      "position": "Начальник сектора",
+      "avatarUrl": null,
+      "phone": "+7 (999) 234-56-82",
+      "work_phone": "119",
+      "email": "anticorruption@sirius-ft.ru"
+    }
+  ],
+  "20": [
+    {
+      "id": 20,
+      "fullName": "Начальник сектора финансового контроля",
+      "position": "Начальник сектора",
+      "avatarUrl": null,
+      "phone": "+7 (999) 234-56-83",
+      "work_phone": "120",
+      "email": "financial.control@sirius-ft.ru"
+    }
+  ]
+}
