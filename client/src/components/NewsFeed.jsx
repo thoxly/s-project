@@ -14,7 +14,6 @@ import {
   useTheme
 } from '@mui/material'
 import { Announcement as NewsIcon } from '@mui/icons-material'
-
 const NewsFeed = () => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
