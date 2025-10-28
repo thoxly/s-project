@@ -16,12 +16,12 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+
 // Routes
 app.use('/api/elma', require('./routes/elma'));
 app.use('/api/requests', require('./routes/requests'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/mock', require('./routes/mock'));
-
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ 
