@@ -4,7 +4,7 @@ import { Box } from '@mui/material';
 import { EmployeeCard } from '../components/EmployeeCard';
 
 export const CustomTreeItem = (props) => {
-  const { itemId, label, expansionIcon, ...other } = props;
+  const { itemId, label, expansionIcon, onDepartmentClick, ...other } = props;
 
   // label приходит строкой, но мы можем сериализовать туда JSON
   // поэтому парсим, если это возможно
@@ -14,6 +14,13 @@ export const CustomTreeItem = (props) => {
   } catch {
     data_label = { label };
   }
+  
+  // Добавляем ID отдела в данные
+  const departmentData = {
+    ...data_label,
+    id: itemId
+  };
+  
   return (
     <TreeItem
       {...other}
@@ -22,15 +29,16 @@ export const CustomTreeItem = (props) => {
         <Box display="flex" alignItems="center" gap={1}>
           {expansionIcon && <span>{expansionIcon}</span>}
           <EmployeeCard
-          data={data_label}
-          department ={data_label.type==='department' ? true:false}
-            fullName={data_label.type==='department' ? data_label.label : data_label.fullName}
-            position={data_label.type==='department' ? '' : data_label.position}
-            avatarText={data_label.avatarText || '?'}
-            avatarUrl={data_label.avatarUrl || null}
-            phone={data_label.phone}
-            work_phone={data_label.work_phone}
-            email={data_label.email}
+            data={departmentData}
+            department={true}
+            fullName={data_label.label}
+            position=""
+            avatarText="?"
+            avatarUrl={null}
+            phone=""
+            work_phone=""
+            email=""
+            onDepartmentClick={onDepartmentClick}
           />
         </Box>
       }
