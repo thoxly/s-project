@@ -17,10 +17,6 @@
     "test:webhook": "node test-webhook.js"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
-  },
-  "dependencies": {
-    "date-fns": "^4.1.0"
     "concurrently": "^8.2.2",
     "js-yaml": "^4.1.0"
   },
@@ -31,6 +27,7 @@
     "@mui/icons-material": "^7.3.4",
     "@mui/material": "^7.3.4",
     "@mui/x-tree-view": "^8.14.1",
+    "date-fns": "^4.1.0",
     "dotenv": "^17.2.3",
     "path": "^0.12.7"
   }

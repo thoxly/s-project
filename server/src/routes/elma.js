@@ -12,8 +12,6 @@ const ELMA_WEBHOOK_URL=process.env.ELMA_WEBHOOK_URL
 const ELMA_WEBHOOK_TOKEN=process.env.ELMA_WEBHOOK_TOKEN
 
 router.post('/get_data', async (req, res) => {
-  console.log(ELMA_WEBHOOK_URL)
-  console.log(ELMA_WEBHOOK_TOKEN)
   try {
     const response = await fetch(`${ELMA_WEBHOOK_URL}`, {
       method: 'POST',
