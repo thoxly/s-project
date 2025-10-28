@@ -15,9 +15,15 @@ export default defineConfig({
     host: '0.0.0.0', // Allow external connections for tuna tunnel
     hmr: {
       port: 5173,
-      host: 'localhost'
+      host: 'localhost',
+      overlay: true, // Show error overlay
+      clientPort: 5173
     },
     strictPort: true,
+    watch: {
+      usePolling: false, // Better for macOS
+      interval: 1000
+    },
     allowedHosts: [
       'localhost',
       '127.0.0.1',

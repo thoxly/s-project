@@ -6,14 +6,16 @@ import {
   Button,
   Box,
   Container,
-  Chip
+  Tooltip,
+  Avatar
 } from '@mui/material'
 import {
   Dashboard as DashboardIcon,
   Person as PersonIcon,
   AddBusiness as BusinessIcon,
   School as SchoolIcon,
-  AccountTree as OrgIcon
+  AccountTree as OrgIcon,
+  Notifications as NotificationsIcon
 } from '@mui/icons-material'
 import { useNavigate, useLocation } from 'react-router-dom'
 
@@ -23,7 +25,6 @@ const Navbar = () => {
 
   const menuItems = [
     { label: 'Главная', path: '/', icon: <DashboardIcon /> },
-    { label: 'Профиль', path: '/profile', icon: <PersonIcon /> },
     { label: 'Сервисы', path: '/services', icon: <BusinessIcon /> },
     { label: 'База знаний', path: '/knowledge', icon: <SchoolIcon /> },
     { label: 'Оргструктура', path: '/org', icon: <OrgIcon /> }
@@ -41,7 +42,19 @@ const Navbar = () => {
     >
       <Container maxWidth="xl">
         <Toolbar sx={{ px: 0 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
+          <Box 
+            sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              flexGrow: 1,
+              cursor: 'pointer',
+              '&:hover': {
+                opacity: 0.8,
+                transition: 'opacity 0.2s ease-in-out'
+              }
+            }}
+            onClick={() => navigate('/')}
+          >
             <Typography 
               variant="h5" 
               component="div" 
@@ -54,20 +67,20 @@ const Navbar = () => {
                 mr: 3
               }}
             >
-              Portal S
+              Сириус ФТ
             </Typography>
-            <Chip 
-              label="v1.0" 
-              size="small" 
+            <Typography 
+              variant="caption" 
               sx={{ 
-                backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                color: 'white',
-                fontWeight: 500
-              }} 
-            />
+                color: 'rgba(255, 255, 255, 0.7)', 
+                fontSize: '12px',
+              }}
+            >
+              v1.0
+            </Typography>
           </Box>
           
-          <Box sx={{ display: 'flex', gap: 0.5 }}>
+          <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
             {menuItems.map((item) => (
               <Button
                 key={item.path}
@@ -97,6 +110,73 @@ const Navbar = () => {
                 {item.label}
               </Button>
             ))}
+            
+            {/* Правая зона с уведомлениями, статусом и профилем */}
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', ml: 2, pl: 2, borderLeft: '1px solid rgba(255, 255, 255, 0.2)' }}>
+              {/* Статус системы */}
+              <Tooltip title="Система работает стабильно" placement="bottom">
+                <Box
+                  sx={{
+                    width: 12,
+                    height: 12,
+                    borderRadius: '50%',
+                    backgroundColor: '#10b981',
+                    cursor: 'pointer',
+                    transition: 'all 300ms ease',
+                    '&:hover': {
+                      transform: 'scale(1.2)',
+                    }
+                  }}
+                />
+              </Tooltip>
+              
+              {/* Уведомления */}
+              <Tooltip title="3 новых уведомления" placement="bottom">
+                <Box sx={{ position: 'relative', cursor: 'pointer' }}>
+                  <NotificationsIcon sx={{ color: 'white', fontSize: 24 }} />
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: -2,
+                      right: -2,
+                      width: 18,
+                      height: 18,
+                      borderRadius: '50%',
+                      backgroundColor: '#ef4444',
+                      color: 'white',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '10px',
+                      fontWeight: 600,
+                    }}
+                  >
+                    3
+                  </Box>
+                </Box>
+              </Tooltip>
+              
+              {/* Профиль */}
+              <Tooltip title="Мой профиль" placement="bottom">
+                <Avatar
+                  sx={{
+                    width: 36,
+                    height: 36,
+                    cursor: 'pointer',
+                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                    color: 'white',
+                    transition: 'all 300ms ease',
+                    '&:hover': {
+                      backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                      transform: 'scale(1.1)',
+                    }
+                  }}
+                  onClick={() => navigate('/profile')}
+                >
+                  <PersonIcon sx={{ fontSize: 20 }} />
+                </Avatar>
+              </Tooltip>
+            </Box>
           </Box>
         </Toolbar>
       </Container>

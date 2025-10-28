@@ -44,6 +44,21 @@ const Profile = () => {
     setActiveTab(newValue)
   }
 
+  // Обновляем document.title при смене вкладки
+  React.useEffect(() => {
+    const tabTitle = getTabTitle(activeTab)
+    if (activeTab === 'profile') {
+      document.title = 'Portal S'
+    } else {
+      document.title = `${tabTitle} — Portal S`
+    }
+  }, [activeTab])
+
+  const getTabTitle = (tabId) => {
+    const tab = tabs.find(t => t.id === tabId)
+    return tab ? tab.label : 'Профиль'
+  }
+
   const renderActiveTab = () => {
     switch (activeTab) {
       case 'profile':
@@ -72,7 +87,7 @@ const Profile = () => {
       
       {/* Заголовок страницы */}
       <Typography variant="h4" sx={{ mb: 3, fontWeight: 700, color: 'text.primary' }}>
-        Профиль
+        {getTabTitle(activeTab)}
       </Typography>
 
       {/* Табы */}

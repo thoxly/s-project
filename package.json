@@ -5,6 +5,8 @@
   "private": true,
   "scripts": {
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:clean": "bash ./scripts/dev-clean.sh",
+    "dev:start": "bash ./scripts/start-dev.sh",
     "dev:server": "cd server && npm run dev",
     "dev:client": "cd client && npm run dev",
     "install:all": "npm install && cd server && npm install && cd ../client && npm install",

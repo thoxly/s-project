@@ -17,14 +17,13 @@ const Breadcrumbs = () => {
 
   const getBreadcrumbItems = () => {
     const pathSegments = location.pathname.split('/').filter(Boolean)
-    const items = []
+    
+    // Если глубина <= 1, не показываем крошки
+    if (pathSegments.length <= 1) {
+      return []
+    }
 
-    // Всегда добавляем "Главная"
-    items.push({
-      label: 'Главная',
-      path: '/',
-      icon: <HomeIcon sx={{ fontSize: 16 }} />
-    })
+    const items = []
 
     // Добавляем остальные сегменты пути
     pathSegments.forEach((segment, index) => {
@@ -85,6 +84,11 @@ const Breadcrumbs = () => {
 
   const breadcrumbItems = getBreadcrumbItems()
 
+  // Если нет элементов для отображения, не рендерим компонент
+  if (breadcrumbItems.length === 0) {
+    return null
+  }
+
   return (
     <Box sx={{ mb: 3 }}>
       <MuiBreadcrumbs
@@ -109,7 +113,6 @@ const Breadcrumbs = () => {
                   fontSize: '0.9rem'
                 }}
               >
-                {item.icon}
                 {item.label}
               </Typography>
             )
@@ -135,7 +138,6 @@ const Breadcrumbs = () => {
                 }
               }}
             >
-              {item.icon}
               {item.label}
             </Link>
           )

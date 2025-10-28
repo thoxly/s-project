@@ -730,9 +730,6 @@ const CalendarTab = () => {
       {/* Заголовок и кнопки */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
-            Календарь
-          </Typography>
           <Typography variant="body1" color="text.secondary">
             Расписание встреч и мероприятий
           </Typography>
