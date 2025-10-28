@@ -19,7 +19,7 @@ const ColleagueThanksBlock = () => {
     {
       id: 1,
       title: "Отличная работа над проектом",
-      from: "Петров П.П.",
+      from: "Петров А.В.",
       date: "15.12.2024",
       type: "achievement"
     },
@@ -33,7 +33,7 @@ const ColleagueThanksBlock = () => {
     {
       id: 3,
       title: "Профессиональный подход к работе",
-      from: "Козлов В.В.",
+      from: "Козлов Д.С.",
       date: "05.12.2024",
       type: "professional"
     }
