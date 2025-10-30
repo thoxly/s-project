@@ -16,7 +16,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import AssignmentIcon from '@mui/icons-material/Assignment';
-import ServiceColumn from '../components/ServiceColumn';
+import ServiceColumn from '../components/service/ServiceColumn';
 import mockData from '../mock/services.json';
 
 const Services = () => {
@@ -25,7 +25,18 @@ const Services = () => {
     return saved ? JSON.parse(saved) : mockData.categories;
   });
   const [activeId, setActiveId] = useState(null);
+  const [openModal, setOpenModal] = useState(false);
+const [description, setDescription] = useState('');
+useEffect(() => {
+  const handleOpenModal = () => {
+    setOpenModal(true);
+  };
 
+  window.addEventListener('openAdminModal', handleOpenModal);
+  return () => {
+    window.removeEventListener('openAdminModal', handleOpenModal);
+  };
+}, []);
   // Сохранение в localStorage при изменении
   useEffect(() => {
     localStorage.setItem('serviceOrder', JSON.stringify(categories));

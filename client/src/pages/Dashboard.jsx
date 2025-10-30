@@ -42,6 +42,7 @@ import BirthdayList from '../components/BirthdayList'
 import QuickLinks from '../components/QuickLinks'
 import DraggableCard from '../components/DraggableCard'
 import { useDashboardState } from '../hooks/useDashboardState.jsx'
+import SupportRequestsWidget from '../components/SupportRequestWidget.jsx'
 
 const Dashboard = () => {
   const navigate = useNavigate()
@@ -98,6 +99,8 @@ const Dashboard = () => {
         return <BirthdayList />
       case 'quicklinks':
         return <QuickLinks />
+      case 'supportrequests':
+        return <SupportRequestsWidget/>
       default:
         return null
     }
