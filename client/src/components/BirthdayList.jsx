@@ -11,7 +11,6 @@ import {
   useTheme
 } from '@mui/material'
 import { Cake as BirthdayIcon } from '@mui/icons-material'
-
 const BirthdayList = () => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
@@ -19,6 +18,7 @@ const BirthdayList = () => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    
     fetch('/mock/birthdays.json')
       .then(response => response.json())
       .then(data => {

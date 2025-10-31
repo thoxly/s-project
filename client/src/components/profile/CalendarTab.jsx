@@ -271,23 +271,23 @@ const CalendarTab = () => {
       date: format(addHours(new Date().setHours(10, 0, 0, 0), 0), "yyyy-MM-dd'T'HH:mm"),
       duration: 30,
       type: 'meeting',
-      participants: ['Иванов И.И.', 'Петров П.П.', 'Сидорова С.С.', 'Кузнецов Д.С.'],
+      participants: ['Иванов Д.И.', 'Петров А.В.', 'Сидорова М.И.', 'Кузнецов Д.С.'],
       location: 'Конференц-зал А',
       online: false
     },
     {
       id: 2,
-      title: 'Обсуждение проекта Portal-S',
+      title: 'Согласование этапов реализации проекта Portal-S',
       date: format(addHours(new Date().setHours(14, 0, 0, 0), 0), "yyyy-MM-dd'T'HH:mm"),
       duration: 60,
       type: 'project',
-      participants: ['Иванов И.И.', 'Смирнов А.В.'],
+      participants: ['Иванов Д.И.', 'Смирнов А.М.'],
       location: 'Zoom',
       online: true
     },
     {
       id: 3,
-      title: 'Презентация новых фич системы',
+      title: 'Презентация обновлений функциональности цифровой платформы',
       date: format(addHours(addDays(new Date(), 1).setHours(11, 30, 0, 0), 0), "yyyy-MM-dd'T'HH:mm"),
       duration: 45,
       type: 'presentation',
@@ -301,7 +301,7 @@ const CalendarTab = () => {
       date: format(addHours(addDays(new Date(), 2).setHours(16, 0, 0, 0), 0), "yyyy-MM-dd'T'HH:mm"),
       duration: 30,
       type: 'one-on-one',
-      participants: ['Иванов И.И.', 'Кузнецов Д.С.'],
+      participants: ['Иванов Д.И.', 'Кузнецов Д.С.'],
       location: 'Кабинет 305',
       online: false
     },

@@ -36,12 +36,12 @@ const PersonalInfoBlock = () => {
   
   // Данные пользователя
   const [userData, setUserData] = useState({
-    fullName: "Иванов Иван Иванович",
+    fullName: "Столяров Антон Сергеевич",
     position: "Ведущий разработчик",
-    organization: "ООО \"Технологии\"",
+    organization: "ООО «Сириус Технологии»",
     birthDate: "15.03.1985",
-    phone: "+7 (999) 123-45-67",
-    email: "i.ivanov@company.ru",
+    phone: "+7 (928) 555-12-34",
+    email: "a.stolyarov@sirius-tech.ru",
     gender: "Мужской",
     department: "Отдел разработки",
     status: "Активен"

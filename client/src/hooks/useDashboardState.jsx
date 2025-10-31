@@ -3,7 +3,8 @@ import {
   Announcement as NewsIcon,
   Event as EventIcon,
   Cake as BirthdayIcon,
-  Link as LinkIcon
+  Link as LinkIcon,
+  HelpOutline as SupportIcon
 } from '@mui/icons-material'
 
 const STORAGE_KEY = 'dashboard-state'
@@ -19,6 +20,8 @@ const getIconComponent = (iconName) => {
       return <BirthdayIcon />
     case 'LinkIcon':
       return <LinkIcon />
+    case 'SupportIcon': // ← добавьте этот case
+      return <SupportIcon />;
     default:
       return <NewsIcon />
   }
@@ -55,6 +58,15 @@ const defaultWidgets = [
     iconName: 'LinkIcon',
     color: 'info',
     order: 3,
+    width: 1
+  },
+
+  {
+    id: 'supportrequests',
+    title: 'Заявки в техподдержку',
+    iconName: 'SupportIcon',
+    color: 'error', 
+    order: 4,
     width: 1
   }
 ]
