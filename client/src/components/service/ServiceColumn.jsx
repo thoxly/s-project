@@ -1,7 +1,7 @@
 import React from 'react';
 import { Paper, Typography, Box, Chip } from '@mui/material';
 import { useDroppable } from '@dnd-kit/core';
-import ServiceCard from './ServiceCard';
+import ServiceCard from './ServiceCard'
 
 // Импортируем иконки
 import WorkIcon from '@mui/icons-material/Work';

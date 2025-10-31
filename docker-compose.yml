@@ -57,24 +57,30 @@ services:
       - portal-network
 
   # Tuna tunnel для внешнего доступа
-  tuna-tunnel:
-    image: alpine:latest
-    container_name: portal-s-tunnel
+  tuna-tunnel-web:
+    container_name: portal-s-tunnel-web
+    image: yuccastream/tuna:latest
+    command: http nginx:80 --domain=surius.ru.tuna.am
     restart: unless-stopped
     environment:
       - TUNA_TOKEN=${TUNA_TOKEN}
-    command: >
-      sh -c "
-        apk add --no-cache curl &&
-        curl -L https://github.com/tuna/tuna/releases/latest/download/tuna_linux_arm64.tar.gz | tar -xz &&
-        ./tuna http nginx:80 --domain=surius.ru.tuna.am --token=$$TUNA_TOKEN
-      "
     depends_on:
       - nginx
     networks:
       - portal-network
-    profiles:
-      - tunnel
+
+  tuna-tunnel-backend:
+    container_name: portal-s-tunnel-backend
+    image: yuccastream/tuna:latest
+    command: http backend:3000 --domain=api-surius.ru.tuna.am
+    restart: unless-stopped
+    environment:
+      - TUNA_TOKEN=${TUNA_TOKEN}
+    depends_on:
+      - backend
+    networks:
+      - portal-network
+
 
 volumes:
   mongodb_data:

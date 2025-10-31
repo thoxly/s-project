@@ -3,9 +3,9 @@ import { Box, Typography, CircularProgress, Alert, Container, Fade } from '@mui/
 import SchoolIcon from '@mui/icons-material/School';
 import SearchBar from '../components/SearchBar';
 import FilterBar from '../components/FilterBar';
-import KnowledgeTabs from '../components/KnowledgeTabs';
-import KnowledgeGrid from '../components/KnowledgeGrid';
-import { KnowledgeModal } from '../components/KnowledgeModal';
+import KnowledgeTabs from '../components/knowledgebase/KnowledgeTabs';
+import KnowledgeGrid from '../components/knowledgebase/KnowledgeGrid';
+import { KnowledgeModal } from '../components/knowledgebase/KnowledgeModal';
 
 const KnowledgeBase = () => {
   const [tab, setTab] = useState(0);

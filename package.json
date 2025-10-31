@@ -25,10 +25,12 @@
     "@mui/icons-material": "^7.3.4",
     "@mui/material": "^7.3.4",
     "@mui/x-tree-view": "^8.14.1",
+    "concurrently": "^8.2.2",
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.3",
+    "js-yaml": "^4.1.0",
     "path": "^0.12.7",
-        "concurrently": "^8.2.2",
-    "js-yaml": "^4.1.0"
+    "uuid": "^13.0.0",
+    "ws": "^8.18.3"
   }
 }
