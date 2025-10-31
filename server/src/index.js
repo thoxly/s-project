@@ -9,25 +9,102 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
+// Явная обработка OPTIONS запросов ПЕРЕД всеми middleware - МАКСИМАЛЬНО ЛИБЕРАЛЬНАЯ CORS ПОЛИТИКА
+app.use((req, res, next) => {
+  // Устанавливаем CORS заголовки для ВСЕХ запросов (включая ошибки)
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, X-Forwarded-For');
+  res.header('Access-Control-Expose-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Max-Age', '86400'); // 24 часа
+  res.header('Access-Control-Allow-Credentials', 'false');
+  
+  // Обрабатываем preflight (OPTIONS) запросы НЕМЕДЛЕННО
+  if (req.method === 'OPTIONS') {
+    console.log('🔍 Preflight OPTIONS запрос получен:', req.path);
+    res.status(204).end();
+    return;
+  }
+  next();
+});
+
+// Middleware - Либеральная CORS политика (разрешает все источники)
 app.use(cors({
-  origin: true, // Allow all origins for testing
-  credentials: true
+  origin: '*', // Разрешаем все источники
+  credentials: false, // При origin: '*' credentials должен быть false
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  exposedHeaders: ['Content-Type', 'Authorization'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
+
+// Дополнительная обработка OPTIONS запросов для всех путей (резервный вариант)
+app.options('*', (req, res) => {
+  console.log('🔍 OPTIONS запрос обработан через app.options("*"):', req.path);
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, X-Forwarded-For');
+  res.header('Access-Control-Max-Age', '86400');
+  res.header('Access-Control-Allow-Credentials', 'false');
+  res.status(204).end();
+});
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Serve static files from client build
 app.use(express.static('../client/dist'));
 
+// Import models to ensure they're registered
+const User = require('./models/User');
+const SupportRequest = require('./models/SupportRequest');
+
 // MongoDB connection with fallback
 const connectToMongoDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/portal-s', {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    console.log('✅ MongoDB connected');
+    // Check if already connected
+    if (mongoose.connection.readyState === 1) {
+      console.log('✅ MongoDB already connected');
+    } else {
+      // Disconnect if in connecting/disconnecting state
+      if (mongoose.connection.readyState !== 0) {
+        await mongoose.disconnect();
+      }
+      
+      await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/portal-s', {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+      });
+      console.log('✅ MongoDB connected');
+    }
+    
+    // Automatically create collections and indexes
+    try {
+      // Create collections if they don't exist
+      const db = mongoose.connection.db;
+      
+      // Create users collection
+      const usersExists = await db.listCollections({ name: 'users' }).hasNext();
+      if (!usersExists) {
+        await db.createCollection('users');
+        console.log('✅ Created collection: users');
+      }
+      
+      // Create supportrequests collection
+      const supportRequestsExists = await db.listCollections({ name: 'supportrequests' }).hasNext();
+      if (!supportRequestsExists) {
+        await db.createCollection('supportrequests');
+        console.log('✅ Created collection: supportrequests');
+      }
+      
+      // Ensure indexes are created
+      await User.ensureIndexes();
+      await SupportRequest.ensureIndexes();
+      console.log('✅ Indexes created/verified');
+    } catch (collectionErr) {
+      console.warn('⚠️  Collection/index creation warning:', collectionErr.message);
+    }
+    
     return true;
   } catch (err) {
     console.warn('⚠️  MongoDB connection failed, running in mock mode:', err.message);

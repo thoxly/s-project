@@ -6,6 +6,25 @@ const router = express.Router();
 const ELMA_API_URL = process.env.ELMA_API_URL;
 const ELMA_TOKEN = process.env.ELMA_TOKEN;
 let status_check_arr=[]
+
+// CORS middleware для этого роутера - МАКСИМАЛЬНО ЛИБЕРАЛЬНАЯ ПОЛИТИКА
+router.use((req, res, next) => {
+  // Устанавливаем CORS заголовки для всех запросов
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, X-Forwarded-For');
+  res.header('Access-Control-Expose-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Max-Age', '86400');
+  res.header('Access-Control-Allow-Credentials', 'false');
+  
+  // Обрабатываем preflight запросы сразу
+  if (req.method === 'OPTIONS') {
+    console.log('🔍 OPTIONS запрос в роутере elma:', req.path);
+    res.status(204).end();
+    return;
+  }
+  next();
+});
 router.post('/get_application', async (req, res) => {
   try {
     // req.body — это defaultRequestContext, который пришёл с фронта
@@ -20,13 +39,34 @@ router.post('/get_application', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+// Явная обработка OPTIONS для /check_status - гарантированная обработка preflight
+router.options('/check_status', (req, res) => {
+  console.log('🔍 OPTIONS запрос для /check_status обработан');
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, X-Forwarded-For');
+  res.header('Access-Control-Max-Age', '86400');
+  res.header('Access-Control-Allow-Credentials', 'false');
+  res.status(204).end();
+});
+
 router.post('/check_status', async (req, res) => {
   try {
+    // Устанавливаем CORS заголовки перед отправкой ответа (дополнительно к middleware)
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, X-Forwarded-For');
+    
+    console.log('✅ POST /check_status - возвращаем', status_check_arr.length, 'элементов');
     // Возвращаем массив данных
     res.json(status_check_arr);
     status_check_arr=[]
   } catch (error) {
-    console.error('Ошибка при обработке запроса: ', error);
+    console.error('❌ Ошибка при обработке запроса /check_status: ', error);
+    // Также добавляем CORS заголовки при ошибке
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, X-Forwarded-For');
     res.status(500).json({ error: error.message });
   }
 });

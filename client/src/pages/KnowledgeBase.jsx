@@ -25,7 +25,8 @@ const KnowledgeBase = () => {
       setError(null);
 
       try {
-        const response = await fetch('http://localhost:3000/api/elma/get_data', {
+        // Используем относительный путь, Vite proxy перенаправит на localhost:3000
+        const response = await fetch('/api/elma/get_data', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

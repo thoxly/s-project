@@ -138,8 +138,32 @@ const ServiceCard = ({ id, title, desc, category }) => {
       }
     };
 
-    // Отправляем на сервер
-    const serverResponse = await fetch('https://api-surius.ru.tuna.am/api/elma/post_application', {
+    // Сначала сохраняем в MongoDB через API
+    // Используем относительный путь, Vite proxy перенаправит на localhost:3000
+    const apiBaseUrl = '';
+    const saveToDbResponse = await fetch(`${apiBaseUrl}/api/requests/support`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...requestToSend,
+        sentAt: new Date().toISOString(),
+        currentStatus: 'Новая',
+      }),
+    });
+
+    if (!saveToDbResponse.ok) {
+      const errorText = await saveToDbResponse.text();
+      console.warn('⚠️ Не удалось сохранить в БД:', errorText);
+      // Продолжаем выполнение, даже если сохранение в БД не удалось
+    } else {
+      const dbResult = await saveToDbResponse.json();
+      console.log('✅ Заявка сохранена в MongoDB:', dbResult);
+    }
+
+    // Отправляем в ELMA
+    const elmaResponse = await fetch(`${apiBaseUrl}/api/elma/post_application`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -147,23 +171,12 @@ const ServiceCard = ({ id, title, desc, category }) => {
       body: JSON.stringify(requestToSend),
     });
 
-    if (!serverResponse.ok) {
-      throw new Error(`Ошибка сервера: ${serverResponse.status} ${serverResponse.statusText}`);
+    if (!elmaResponse.ok) {
+      throw new Error(`Ошибка сервера ELMA: ${elmaResponse.status} ${elmaResponse.statusText}`);
     }
 
-    const serverResult = await serverResponse.json();
-    console.log('✅ Заявка успешно отправлена на сервер:', serverResult);
-
-    // Только после успешного ответа — сохраняем в localStorage БЕЗ ответа сервера
-    const existingApplications = JSON.parse(localStorage.getItem('applications') || '[]');
-    existingApplications.push({
-      ...requestToSend,
-      sentAt: new Date().toISOString(), // Добавляем временную метку
-      // serverResponse: serverResult, // <- Убираем это
-    });
-    localStorage.setItem('applications', JSON.stringify(existingApplications));
-
-    console.log('💾 Заявка сохранена в localStorage (без ответа сервера)');
+    const elmaResult = await elmaResponse.json();
+    console.log('✅ Заявка успешно отправлена в ELMA:', elmaResult);
 
     // Закрываем модальное окно и сбрасываем состояние
     handleCloseCreate();
