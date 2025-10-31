@@ -56,21 +56,21 @@ router.post('/get_application', async (req, res) => {
     console.log('═══════════════════════════════════════════════════════════');
 
     // Извлекаем id_portal и статус из данных
-    // ELMA может отправлять данные в разных форматах, пробуем разные варианты
+    // ELMA отправляет: { id, status, description, type, date, initiator, assignee }
     let idPortal = null;
     let newStatus = null;
 
-    // Вариант 1: данные в корне объекта
+    // Вариант 1: ELMA отправляет напрямую { id: "...", status: "..." }
     if (applicationData.id_portal || applicationData.id) {
       idPortal = applicationData.id_portal || applicationData.id;
     }
     
-    // Вариант 2: данные в context
+    // Вариант 2: данные в context (для других форматов)
     if (applicationData.context && applicationData.context.id_portal) {
       idPortal = applicationData.context.id_portal;
     }
 
-    // Извлекаем статус (может быть в разных полях)
+    // Извлекаем статус (ELMA отправляет в поле "status")
     if (applicationData.status) {
       newStatus = applicationData.status;
     } else if (applicationData.currentStatus) {
@@ -79,7 +79,11 @@ router.post('/get_application', async (req, res) => {
       newStatus = applicationData.context.status;
     }
 
-    console.log('🔍 Извлеченные данные:', { idPortal, newStatus });
+    console.log('🔍 Извлеченные данные:', { 
+      idPortal, 
+      newStatus,
+      receivedFields: Object.keys(applicationData)
+    });
 
     if (!idPortal) {
       console.warn('⚠️  Не удалось извлечь id_portal из данных ELMA');
@@ -105,26 +109,35 @@ router.post('/get_application', async (req, res) => {
             updatedAt: new Date()
           };
 
-          // Обновляем статус, если он указан
+          // Обновляем статус, если он указан (ELMA отправляет в поле "status")
           if (newStatus) {
             updateData.currentStatus = newStatus;
           }
 
-          // Обновляем context, если пришли новые данные
+          // Обновляем context с данными от ELMA
+          // ELMA отправляет: { id, status, description, type, date, initiator, assignee }
           if (applicationData.context) {
-            updateData.context = applicationData.context;
-          } else if (applicationData) {
-            // Если весь объект - это context
-            updateData.context = { ...existingRequest.context, ...applicationData };
-            if (idPortal) {
-              updateData.context.id_portal = idPortal;
-            }
+            // Если данные уже в context
+            updateData.context = { ...existingRequest.context, ...applicationData.context };
+            updateData.context.id_portal = idPortal;
+          } else {
+            // Если данные пришли напрямую от ELMA, маппим их в context
+            updateData.context = {
+              ...existingRequest.context,
+              id_portal: idPortal,
+              // Сохраняем данные от ELMA в context
+              application_text: applicationData.description || existingRequest.context?.application_text,
+              // Обновляем другие поля если они есть
+              ...(applicationData.type && { service: [applicationData.type] }),
+              ...(applicationData.assignee && { responsible: [applicationData.assignee] }),
+              ...(applicationData.initiator && { aplicant: [applicationData.initiator] }),
+            };
           }
 
           const updatedRequest = await SupportRequest.findOneAndUpdate(
             { 'context.id_portal': idPortal },
             updateData,
-            { new: true, runValidators: true }
+            { new: true, runValidators: false } // Отключаем строгую валидацию для статусов от ELMA
           );
 
           console.log('✅ Заявка обновлена в MongoDB:', {
@@ -139,11 +152,17 @@ router.post('/get_application', async (req, res) => {
           });
         } else {
           // Создаем новую заявку, если её нет
+          // ELMA отправляет: { id, status, description, type, date, initiator, assignee }
+          const contextData = applicationData.context || {
+            id_portal: idPortal,
+            application_text: applicationData.description || applicationData.application_text || '-',
+            ...(applicationData.type && { service: [applicationData.type] }),
+            ...(applicationData.assignee && { responsible: [applicationData.assignee] }),
+            ...(applicationData.initiator && { aplicant: [applicationData.initiator] }),
+          };
+          
           const newRequest = new SupportRequest({
-            context: applicationData.context || {
-              ...applicationData,
-              id_portal: idPortal
-            },
+            context: contextData,
             currentStatus: newStatus || 'Новая',
             sentAt: new Date()
           });
