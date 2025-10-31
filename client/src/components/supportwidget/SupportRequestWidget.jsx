@@ -15,6 +15,11 @@ import {
   Modal,
   TextField,
   Tooltip,
+  Drawer,
+  IconButton,
+  CircularProgress,
+  Chip,
+  Grid,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { SupportRequestCard } from './SupportRequestCard';
@@ -23,10 +28,14 @@ import {
   SupportAgent as SupportAgentIcon,
   Build as BuildIcon,
   AttachFile as AttachFileIcon,
+  Close as CloseIcon,
+  CalendarToday as CalendarIcon,
+  Person as PersonIcon,
+  Description as DescriptionIcon,
+  Info as InfoIcon,
 } from '@mui/icons-material';
 // Добавьте в список импортов из '@mui/material'
 import {  CheckCircle as CheckCircleIcon, ErrorOutline as ErrorOutlineIcon } from '@mui/icons-material';
-import {CircularProgress} from '@mui/material';
 // --- Вспомогательная функция для генерации UUID ---
 function generateSimpleUUID() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -35,6 +44,17 @@ function generateSimpleUUID() {
     return v.toString(16);
   });
 }
+
+// Карта цветов для статусов
+const statusColors = {
+  'Новая': 'default',
+  'В работе': 'info',
+  'На уточнении': 'warning',
+  'Закрыта': 'success',
+  'Отложена': 'secondary',
+  'Отменена': 'error',
+  'Выполнена': 'success',
+};
 
 // --- Данные о сервисах ---
 const servicesData = {
@@ -216,8 +236,13 @@ const SupportRequestsWidget = () => {
   const [description, setDescription] = useState('');
   const [isSending, setIsSending] = useState(false);
 
-    const [sendResult, setSendResult] = useState(null); // 'success' | 'error' | null
-  const [sendMessage, setSendMessage] = useState(''); // Текст сообщения
+  // --- Состояния для Drawer ---
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [requestDetails, setRequestDetails] = useState(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
+ const [sendResult, setSendResult] = useState(null); // 'success' | 'error' | null
+  const [sendMessage, setSendMessage] = useState('');
   // --- Обработчики меню ---
   const handleMenuClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -262,6 +287,91 @@ const SupportRequestsWidget = () => {
   const handleSubmit = () => {
     alert('Недоступно в демо-версии');
     handleCloseCreate();
+  };
+
+  // --- Функция для открытия Drawer и загрузки деталей заявки ---
+  const handleRequestClick = async (request) => {
+    setSelectedRequest(request);
+    setDrawerOpen(true);
+    setLoadingDetails(true);
+    setRequestDetails(null);
+
+    try {
+      // Загружаем детали заявки из API
+      const apiBaseUrl = '';
+      const response = await fetch(`${apiBaseUrl}/api/requests/support/${request.id}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          setRequestDetails(result.data);
+        } else {
+          // Если API вернул успех, но без данных, используем данные из карточки
+          setRequestDetails({
+            context: {
+              id_portal: request.id,
+              application_text: request.description,
+            },
+            currentStatus: request.status,
+            sentAt: request.createdAt,
+          });
+        }
+      } else {
+        console.error('Ошибка при загрузке деталей заявки:', response.status);
+        // Если не удалось загрузить из API, используем данные из карточки
+        setRequestDetails({
+          context: {
+            id_portal: request.id,
+            application_text: request.description,
+          },
+          currentStatus: request.status,
+          sentAt: request.createdAt,
+        });
+      }
+    } catch (error) {
+      console.error('Ошибка при загрузке деталей заявки:', error);
+      // Fallback на данные из карточки
+      setRequestDetails({
+        context: {
+          id_portal: request.id,
+          application_text: request.description,
+        },
+        currentStatus: request.status,
+        sentAt: request.createdAt,
+      });
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
+
+  // --- Функция для закрытия Drawer ---
+  const handleDrawerClose = () => {
+    setDrawerOpen(false);
+    setSelectedRequest(null);
+    setRequestDetails(null);
+  };
+
+  // --- Функция для форматирования даты ---
+  const formatDate = (dateString) => {
+    if (!dateString) return '—';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '—';
+      return date.toLocaleDateString('ru-RU', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch {
+      return '—';
+    }
   };
 
   // --- Обработчик кнопки "Отправить" в модальном окне ---
@@ -330,118 +440,112 @@ const SupportRequestsWidget = () => {
     setSendResult('success');
     setSendMessage(`Заявка ${ticketNumber} успешно отправлена!`);
 
-  } catch (error) {
-    console.error('❌ Ошибка при обработке заявки:', error);
-    // --- Показываем ошибку ---
-    setSendResult('error');
-    setSendMessage('Произошла ошибка при отправке заявки.');
-  } finally {
-    setIsSending(false);
-  }
-};
+      // Сначала сохраняем в MongoDB через API
+      // Используем относительный путь, Vite proxy перенаправит на localhost:3000
+      const apiBaseUrl = '';
+      
+      console.log('💾 Сохранение заявки в БД:', {
+        url: `${apiBaseUrl}/api/requests/support`,
+        data: {
+          ...requestToSend,
+          sentAt: new Date().toISOString(),
+          currentStatus: 'Новая',
+        }
+      });
+      
+      const saveToDbResponse = await fetch(`${apiBaseUrl}/api/requests/support`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...requestToSend,
+          sentAt: new Date().toISOString(),
+          currentStatus: 'Новая',
+        }),
+      });
 
-  // --- Эффект для загрузки заявок из localStorage и поллинга ---
-  useEffect(() => {
-    let loadTimerId;
-    let pollIntervalId;
-
-    const fetchStatusUpdates = async () => {
-      try {
-        console.log('🔁 Запрос обновлений статуса у сервера...');
-        // Используем правильный URL, возможно, с proxy
-        const response = await fetch('https://api-surius.ru.tuna.am/api/elma/check_status', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          // body: JSON.stringify({ action: 'getStatusUpdates' }), // Опционально
+      if (!saveToDbResponse.ok) {
+        let errorData;
+        try {
+          errorData = await saveToDbResponse.json();
+        } catch (e) {
+          errorData = { error: await saveToDbResponse.text() };
+        }
+        
+        console.error('❌ Ошибка сохранения в БД:', {
+          status: saveToDbResponse.status,
+          statusText: saveToDbResponse.statusText,
+          error: errorData
         });
-
-        if (!response.ok) {
-          console.warn(`Ошибка при запросе статуса: ${response.status} ${response.statusText}`);
-          return;
-        }
-
-        const statusUpdatesArray = await response.json();
-        console.log('📥 Получены обновления статуса от сервера:', statusUpdatesArray);
-
-        if (Array.isArray(statusUpdatesArray) && statusUpdatesArray.length > 0) {
-          setRequests((prevRequests) => {
-            let hasChanges = false;
-            const updatedRequests = [...prevRequests];
-            let storedApplications = JSON.parse(localStorage.getItem('applications') || '[]');
-            let localStorageUpdated = false;
-
-            statusUpdatesArray.forEach((update) => {
-              const { id: serverId, status: newStatus } = update;
-
-              if (serverId && newStatus !== undefined) {
-                const indexToUpdate = updatedRequests.findIndex((req) => req.id === serverId);
-
-                if (
-                  indexToUpdate !== -1 &&
-                  updatedRequests[indexToUpdate].status !== newStatus
-                ) {
-                  console.log(
-                    `🔄 Обновление статуса для заявки ${serverId}: ${updatedRequests[indexToUpdate].status} -> ${newStatus}`
-                  );
-                  updatedRequests[indexToUpdate] = {
-                    ...updatedRequests[indexToUpdate],
-                    status: newStatus,
-                  };
-                  hasChanges = true;
-
-                  const storageIndexToUpdate = storedApplications.findIndex(
-                    (item) => item.context?.id_portal === serverId
-                  );
-                  if (storageIndexToUpdate !== -1) {
-                    storedApplications[storageIndexToUpdate].currentStatus = newStatus;
-                    localStorageUpdated = true;
-                  }
-                }
-              }
-            });
-
-            if (hasChanges) {
-              if (localStorageUpdated) {
-                try {
-                  localStorage.setItem('applications', JSON.stringify(storedApplications));
-                  console.log('💾 Обновленные данные заявок сохранены в localStorage.');
-                } catch (e) {
-                  console.error('Ошибка при сохранении обновлений в localStorage:', e);
-                }
-              }
-              return updatedRequests;
-            }
-            return prevRequests;
-          });
+        
+        // Если MongoDB не подключена, показываем пользователю предупреждение
+        if (saveToDbResponse.status === 503) {
+          alert(`⚠️ Внимание: Заявка не сохранена в базе данных.\nПричина: ${errorData.error || 'MongoDB не подключена'}\n\nЗаявка будет отправлена в ELMA, но не будет сохранена локально.`);
         } else {
-          console.log(
-            'ℹ️ Сервер вернул пустой массив или не массив. Нет обновлений статуса.'
-          );
+          // Для других ошибок также показываем предупреждение
+          alert(`⚠️ Внимание: Заявка не сохранена в базе данных.\nСтатус: ${saveToDbResponse.status}\nОшибка: ${errorData.error || 'Неизвестная ошибка'}`);
         }
-      } catch (error) {
-        console.error('❌ Ошибка при получении/обработке обновлений статуса через поллинг:', error);
+      } else {
+        const dbResult = await saveToDbResponse.json();
+        console.log('✅ Заявка сохранена в MongoDB:', dbResult);
       }
-    };
 
-    loadTimerId = setTimeout(() => {
-      try {
-        console.log('📂 Загрузка существующих заявок из localStorage...');
-        const storedRequestsRaw = localStorage.getItem('applications');
-        let storedRequests = [];
+      // Отправляем в ELMA
+      const elmaResponse = await fetch(`${apiBaseUrl}/api/elma/post_application`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestToSend),
+      });
 
-        if (storedRequestsRaw) {
-          try {
-            storedRequests = JSON.parse(storedRequestsRaw);
-            console.log(`✅ Успешно загружено ${storedRequests.length} заявок из localStorage.`);
-          } catch (parseError) {
-            console.error('⚠️ Ошибка парсинга данных из localStorage:', parseError);
-            storedRequests = [];
-          }
-        }
+      if (!elmaResponse.ok) {
+        const errorText = await elmaResponse.text();
+        throw new Error(
+          `Ошибка сервера ELMA: ${elmaResponse.status} ${elmaResponse.statusText}. ${errorText}`
+        );
+      }
 
-        const formattedRequests = storedRequests.map((storageItem) => {
+      const elmaResult = await elmaResponse.json();
+      console.log('✅ Заявка успешно отправлена в ELMA:', elmaResult);
+
+      // Обновляем список заявок из API
+      await loadRequestsFromAPI();
+
+      // Закрываем модальное окно и сбрасываем состояние
+      handleCloseCreate();
+    } catch (error) {
+      console.error('❌ Ошибка при обработке заявки:', error);
+      alert('Не удалось обработать заявку: ' + error.message);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  // --- Функция для загрузки заявок из API ---
+  const loadRequestsFromAPI = async () => {
+    try {
+      // Используем относительный путь, Vite proxy перенаправит на localhost:3000
+      const apiBaseUrl = '';
+      const response = await fetch(`${apiBaseUrl}/api/requests/support`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        console.warn(`⚠️ Ошибка при загрузке заявок: ${response.status} ${response.statusText}`);
+        // Fallback на localStorage если API недоступен
+        return loadRequestsFromLocalStorage();
+      }
+
+      const result = await response.json();
+      console.log('📥 Заявки загружены из API:', result);
+
+      if (result.success && Array.isArray(result.data)) {
+        const formattedRequests = result.data.map((storageItem) => {
           const context = storageItem.context || {};
           const appId = context.id_portal || generateSimpleUUID();
           const initialStatus = storageItem.currentStatus || 'Новая';
@@ -458,14 +562,128 @@ const SupportRequestsWidget = () => {
         });
 
         setRequests(formattedRequests);
-        console.log(`📦 Установлено ${formattedRequests.length} заявок в состояние компонента.`);
-      } catch (error) {
-        console.error('💥 Неожиданная ошибка при загрузке заявок из localStorage:', error);
-        setRequests([]);
-      } finally {
-        setLoading(false);
-        console.log('🏁 Первоначальная загрузка завершена.');
+        console.log(`📦 Установлено ${formattedRequests.length} заявок из API.`);
+        return formattedRequests;
+      } else {
+        // Fallback на localStorage
+        return loadRequestsFromLocalStorage();
       }
+    } catch (error) {
+      console.error('❌ Ошибка при загрузке заявок из API:', error);
+      // Fallback на localStorage
+      return loadRequestsFromLocalStorage();
+    }
+  };
+
+  // --- Функция для загрузки заявок из localStorage (fallback) ---
+  const loadRequestsFromLocalStorage = () => {
+    try {
+      console.log('📂 Загрузка существующих заявок из localStorage (fallback)...');
+      const storedRequestsRaw = localStorage.getItem('applications');
+      let storedRequests = [];
+
+      if (storedRequestsRaw) {
+        try {
+          storedRequests = JSON.parse(storedRequestsRaw);
+          console.log(`✅ Успешно загружено ${storedRequests.length} заявок из localStorage.`);
+        } catch (parseError) {
+          console.error('⚠️ Ошибка парсинга данных из localStorage:', parseError);
+          storedRequests = [];
+        }
+      }
+
+      const formattedRequests = storedRequests.map((storageItem) => {
+        const context = storageItem.context || {};
+        const appId = context.id_portal || generateSimpleUUID();
+        const initialStatus = storageItem.currentStatus || 'Новая';
+
+        return {
+          id: appId,
+          ticketNumber: 'SD-' + appId.split('-')[0].substring(0, 6).toUpperCase(),
+          createdAt: storageItem.sentAt || new Date().toISOString(),
+          initiator: 'Демо-пользователь',
+          type: 'Администрирование ИС/ОС | Права доступа',
+          description: context.application_text || 'Описание отсутствует',
+          status: initialStatus,
+          assignee: '—',
+        };
+      });
+
+      setRequests(formattedRequests);
+      console.log(`📦 Установлено ${formattedRequests.length} заявок из localStorage.`);
+      return formattedRequests;
+    } catch (error) {
+      console.error('💥 Неожиданная ошибка при загрузке заявок из localStorage:', error);
+      setRequests([]);
+      return [];
+    }
+  };
+
+  // --- Функция для проверки обновлений статуса из ELMA ---
+  const fetchStatusUpdates = async () => {
+    try {
+      console.log('🔁 Запрос обновлений статуса у сервера...');
+      // Используем относительный путь, Vite proxy перенаправит на localhost:3000
+      const apiBaseUrl = '';
+      const response = await fetch(`${apiBaseUrl}/api/elma/check_status`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        console.warn(`⚠️ Ошибка при запросе статуса: ${response.status} ${response.statusText}`);
+        return;
+      }
+
+      const statusUpdatesArray = await response.json();
+      console.log('📥 Получены обновления статуса от сервера:', statusUpdatesArray);
+
+      if (Array.isArray(statusUpdatesArray) && statusUpdatesArray.length > 0) {
+        // Обновляем статусы в MongoDB через API
+        for (const update of statusUpdatesArray) {
+          const { id: serverId, status: newStatus } = update;
+
+          if (serverId && newStatus !== undefined) {
+            try {
+              // Используем относительный путь, Vite proxy перенаправит на localhost:3000
+              const apiBaseUrl = '';
+              await fetch(`${apiBaseUrl}/api/requests/support/${serverId}/status`, {
+                method: 'PATCH',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ currentStatus: newStatus }),
+              });
+              console.log(`🔄 Статус заявки ${serverId} обновлен в БД: ${newStatus}`);
+            } catch (error) {
+              console.error(`❌ Ошибка при обновлении статуса в БД для ${serverId}:`, error);
+            }
+          }
+        }
+
+        // Перезагружаем заявки из API
+        await loadRequestsFromAPI();
+      } else {
+        console.log(
+          'ℹ️ Сервер вернул пустой массив или не массив. Нет обновлений статуса.'
+        );
+      }
+    } catch (error) {
+      console.error('❌ Ошибка при получении/обработке обновлений статуса через поллинг:', error);
+    }
+  };
+
+  // --- Эффект для загрузки заявок из API и поллинга ---
+  useEffect(() => {
+    let loadTimerId;
+    let pollIntervalId;
+
+    loadTimerId = setTimeout(async () => {
+      await loadRequestsFromAPI();
+      setLoading(false);
+      console.log('🏁 Первоначальная загрузка завершена.');
 
       console.log('📡 Запуск поллинга статуса (/api/elma/check_status) каждые 10 секунд...');
       fetchStatusUpdates();
@@ -473,7 +691,6 @@ const SupportRequestsWidget = () => {
         console.log('🔁 Выполнение периодического запроса статуса...');
         fetchStatusUpdates();
       }, 10000); // Каждые 10 секунд
-
     }, 500); // Небольшая задержка для имитации загрузки
 
     return () => {
@@ -736,9 +953,7 @@ const SupportRequestsWidget = () => {
             <SupportRequestCard
               key={request.id}
               request={request}
-              onClick={() => {
-                alert('Недоступно в демо-версии');
-              }}
+              onClick={() => handleRequestClick(request)}
             />
           ))}
         </Box>
@@ -759,6 +974,135 @@ const SupportRequestsWidget = () => {
           </Typography>
         </Paper>
       )}
+
+      {/* Off-canvas Drawer для просмотра деталей заявки */}
+      <Drawer
+        anchor="right"
+        open={drawerOpen}
+        onClose={handleDrawerClose}
+        PaperProps={{
+          sx: {
+            width: { xs: '100%', sm: 480, md: 600 },
+            maxWidth: '90vw',
+          },
+        }}
+      >
+        <Box sx={{ p: { xs: 2, sm: 3 }, height: '100%', display: 'flex', flexDirection: 'column' }}>
+          {/* Заголовок Drawer */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              Детали заявки
+            </Typography>
+            <IconButton onClick={handleDrawerClose} size="small">
+              <CloseIcon />
+            </IconButton>
+          </Box>
+
+          {/* Контент Drawer */}
+          {loadingDetails ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1 }}>
+              <CircularProgress />
+            </Box>
+          ) : requestDetails ? (
+            <Box sx={{ flex: 1, overflowY: 'auto' }}>
+              {/* Номер заявки и статус */}
+              <Box sx={{ mb: 3 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
+                    Номер заявки
+                  </Typography>
+                  <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                    {selectedRequest?.ticketNumber || requestDetails.context?.id_portal || '—'}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
+                    Статус
+                  </Typography>
+                  <Chip
+                    label={requestDetails.currentStatus || selectedRequest?.status || 'Неизвестно'}
+                    size="small"
+                    color={statusColors[requestDetails.currentStatus || selectedRequest?.status] || 'default'}
+                  />
+                </Box>
+              </Box>
+
+              <Divider sx={{ my: 2 }} />
+
+              {/* Описание заявки */}
+              <Box sx={{ mb: 3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <DescriptionIcon sx={{ mr: 1, fontSize: 20, color: 'text.secondary' }} />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                    Описание
+                  </Typography>
+                </Box>
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    p: 2,
+                    backgroundColor: 'grey.50',
+                    borderRadius: 1,
+                  }}
+                >
+                  <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+                    {requestDetails.context?.application_text || selectedRequest?.description || 'Описание отсутствует'}
+                  </Typography>
+                </Paper>
+              </Box>
+
+              <Divider sx={{ my: 2 }} />
+
+              {/* Информация о заявке */}
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                    <CalendarIcon sx={{ mr: 1, fontSize: 20, color: 'text.secondary' }} />
+                    <Typography variant="body2" color="text.secondary">
+                      Дата создания
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" sx={{ pl: 4 }}>
+                    {formatDate(requestDetails.sentAt || requestDetails.createdAt || selectedRequest?.createdAt)}
+                  </Typography>
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                    <PersonIcon sx={{ mr: 1, fontSize: 20, color: 'text.secondary' }} />
+                    <Typography variant="body2" color="text.secondary">
+                      Инициатор
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" sx={{ pl: 4 }}>
+                    {selectedRequest?.initiator || 'Демо-пользователь'}
+                  </Typography>
+                </Grid>
+
+                {requestDetails.updatedAt && (
+                  <Grid item xs={12}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <CalendarIcon sx={{ mr: 1, fontSize: 20, color: 'text.secondary' }} />
+                      <Typography variant="body2" color="text.secondary">
+                        Последнее обновление
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" sx={{ pl: 4 }}>
+                      {formatDate(requestDetails.updatedAt)}
+                    </Typography>
+                  </Grid>
+                )}
+              </Grid>
+            </Box>
+          ) : (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1 }}>
+              <Typography variant="body2" color="text.secondary">
+                Не удалось загрузить детали заявки
+              </Typography>
+            </Box>
+          )}
+        </Box>
+      </Drawer>
     </Box>
   );
 };
