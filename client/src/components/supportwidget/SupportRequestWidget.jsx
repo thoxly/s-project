@@ -239,7 +239,7 @@ const SupportRequestsWidget = () => {
       // Для других сервисов показываем уведомление или заглушку
       const serviceName = servicesData.services.find((s) => s.id === serviceId)?.title || serviceId;
       alert(
-        `Вы выбрали: ${serviceName}\n(Функционал для этого сервиса будет реализован позже)`
+        `Вы выбрали: ${serviceName}\n(Недоступно в демо-версии)`
       );
       handleMenuClose(); // Закрываем меню
     }
@@ -508,17 +508,31 @@ const SupportRequestsWidget = () => {
             </Button>
 
             {/* --- Выпадающее меню со списком всех сервисов --- */}
-            <Menu
+             <Menu
               anchorEl={anchorEl}
               open={menuOpen}
               onClose={handleMenuClose}
-              onClick={handleMenuClose} // Закрывает меню при клике вне его
+              onClick={handleMenuClose}
+              // --- Исправленные свойства позиционирования ---
+              anchorOrigin={{
+                vertical: 'top',    // Верх кнопки
+                horizontal: 'right', // Правый край кнопки
+              }}
+              transformOrigin={{
+                vertical: 'top',    // Верх меню
+                horizontal: 'left', // Левый край меню
+              }}
+              // ---------------------------------------------
               PaperProps={{
                 elevation: 4,
-                sx: { borderRadius: 2, maxHeight: '70vh', overflowY: 'auto' }, // Скролл
+                sx: {
+                  borderRadius: 2,
+                  maxHeight: '70vh',
+                  overflowY: 'auto',
+                  mt: 0.5, // Небольшой отступ сверху, чтобы не прилипало вплотную
+                  mr: 0.5, // Небольшой отступ справа, если нужно
+                },
               }}
-              transformOrigin={{ horizontal: 'left', vertical: 'top' }}
-              anchorOrigin={{ horizontal: 'left', vertical: 'bottom' }}
             >
               {/* Заголовок меню */}
               <MenuItem disabled>
@@ -534,7 +548,7 @@ const SupportRequestsWidget = () => {
                 <MenuItem
                   key={service.id}
                   onClick={(e) => {
-                    e.stopPropagation(); // Предотвращает закрытие меню при клике на MenuItem
+                    e.stopPropagation();
                     handleServiceItemClick(service.id);
                   }}
                   sx={{ py: 1 }}
