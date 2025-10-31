@@ -568,77 +568,21 @@ const SupportRequestsWidget = () => {
     }
   };
 
-  // --- Функция для проверки обновлений статуса из ELMA ---
-  const fetchStatusUpdates = async () => {
-    try {
-      console.log('🔁 Запрос обновлений статуса у сервера...');
-      // Используем относительный путь, Vite proxy перенаправит на localhost:3000
-      const apiBaseUrl = '';
-      const response = await fetch(`${apiBaseUrl}/api/elma/check_status`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        console.warn(`⚠️ Ошибка при запросе статуса: ${response.status} ${response.statusText}`);
-        return;
-      }
-
-      const statusUpdatesArray = await response.json();
-      console.log('📥 Получены обновления статуса от сервера:', statusUpdatesArray);
-
-      if (Array.isArray(statusUpdatesArray) && statusUpdatesArray.length > 0) {
-        // Обновляем статусы в MongoDB через API
-        for (const update of statusUpdatesArray) {
-          const { id: serverId, status: newStatus } = update;
-
-          if (serverId && newStatus !== undefined) {
-            try {
-              // Используем относительный путь, Vite proxy перенаправит на localhost:3000
-              const apiBaseUrl = '';
-              await fetch(`${apiBaseUrl}/api/requests/support/${serverId}/status`, {
-                method: 'PATCH',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ currentStatus: newStatus }),
-              });
-              console.log(`🔄 Статус заявки ${serverId} обновлен в БД: ${newStatus}`);
-            } catch (error) {
-              console.error(`❌ Ошибка при обновлении статуса в БД для ${serverId}:`, error);
-            }
-          }
-        }
-
-        // Перезагружаем заявки из API
-        await loadRequestsFromAPI();
-      } else {
-        console.log(
-          'ℹ️ Сервер вернул пустой массив или не массив. Нет обновлений статуса.'
-        );
-      }
-    } catch (error) {
-      console.error('❌ Ошибка при получении/обработке обновлений статуса через поллинг:', error);
-    }
-  };
-
-  // --- Эффект для загрузки заявок из API и поллинга ---
+  // --- Эффект для загрузки заявок из API и периодического обновления ---
   useEffect(() => {
     let loadTimerId;
-    let pollIntervalId;
+    let refreshIntervalId;
 
     loadTimerId = setTimeout(async () => {
       await loadRequestsFromAPI();
       setLoading(false);
       console.log('🏁 Первоначальная загрузка завершена.');
 
-      console.log('📡 Запуск поллинга статуса (/api/elma/check_status) каждые 10 секунд...');
-      fetchStatusUpdates();
-      pollIntervalId = setInterval(() => {
-        console.log('🔁 Выполнение периодического запроса статуса...');
-        fetchStatusUpdates();
+      // Периодически обновляем список заявок (статусы теперь сохраняются напрямую в MongoDB через webhook от ELMA)
+      console.log('📡 Запуск периодического обновления списка заявок каждые 10 секунд...');
+      refreshIntervalId = setInterval(async () => {
+        console.log('🔁 Выполнение периодического обновления списка заявок...');
+        await loadRequestsFromAPI();
       }, 10000); // Каждые 10 секунд
     }, 500); // Небольшая задержка для имитации загрузки
 
@@ -648,9 +592,9 @@ const SupportRequestsWidget = () => {
         clearTimeout(loadTimerId);
         console.log('⏱️ Таймер загрузки очищен.');
       }
-      if (pollIntervalId) {
-        clearInterval(pollIntervalId);
-        console.log('⏰ Интервал поллинга остановлен.');
+      if (refreshIntervalId) {
+        clearInterval(refreshIntervalId);
+        console.log('⏰ Интервал обновления остановлен.');
       }
     };
   }, []); // Пустой массив зависимостей - эффект выполняется только при монтировании
