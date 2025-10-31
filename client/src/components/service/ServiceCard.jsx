@@ -139,7 +139,7 @@ const ServiceCard = ({ id, title, desc, category }) => {
     };
 
     // Отправляем на сервер
-    const serverResponse = await fetch('http://localhost:3000/api/elma/post_application', {
+    const serverResponse = await fetch('https://api-surius.ru.tuna.am/api/elma/post_application', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -342,7 +342,7 @@ const ServiceCard = ({ id, title, desc, category }) => {
                 <Button
                   variant="contained"
                   onClick={handleSend}
-                  disabled={isSending} // Отключаем кнопку во время отправки
+                  disabled={description.length===0 ||isSending} // Отключаем кнопку во время отправки
                   sx={{
                     color: 'white',
                     backgroundColor: 'primary.main',
