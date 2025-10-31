@@ -1,3 +1,4 @@
+// src/widgets/SupportRequestsWidget.jsx
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -10,13 +11,21 @@ import {
   MenuItem,
   ListItemIcon,
   ListItemText,
+  Divider,
+  Modal,
+  TextField,
+  Tooltip,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { SupportRequestCard } from './SupportRequestCard'; // Убедитесь, что путь правильный
-import { HelpOutline as SupportIcon, SupportAgent as SupportAgentIcon } from '@mui/icons-material';
+import { SupportRequestCard } from './SupportRequestCard';
+import {
+  HelpOutline as SupportIcon,
+  SupportAgent as SupportAgentIcon,
+  Build as BuildIcon,
+  AttachFile as AttachFileIcon,
+} from '@mui/icons-material';
 
-// --- Вспомогательная функция для генерации UUID (если uuid не используется) ---
-// Если вы используете библиотеку uuid, эту функцию можно удалить
+// --- Вспомогательная функция для генерации UUID ---
 function generateSimpleUUID() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
     const r = Math.random() * 16 | 0;
@@ -25,61 +34,291 @@ function generateSimpleUUID() {
   });
 }
 
+// --- Данные о сервисах ---
+const servicesData = {
+  id: 'it-support',
+  title: 'Заявка в техподдержку',
+  icon: 'MonitorCog',
+  services: [
+    // Перемещаем "admin" в начало списка
+    {
+      id: 'admin',
+      title: 'Администрирование ИС/ОС | Права доступа',
+      desc: 'Назначение прав',
+    },
+    {
+      id: 'vcs',
+      title: 'Организация ВКС и очных совещаний',
+      desc: 'Онлайн/очная встреча',
+    },
+    {
+      id: 'consumables',
+      title: 'Замена расходных материалов',
+      desc: 'Тонер, чернила, бумага',
+    },
+    {
+      id: 'software',
+      title: 'Консультация/неисправность ПО/ИС/ОС',
+      desc: 'Диагностика и помощь',
+    },
+    {
+      id: 'printer',
+      title: 'Подключение МФУ, принтера, сканера',
+      desc: 'Настройка оборудования',
+    },
+    {
+      id: 'hardware',
+      title: 'Аппаратная неисправность орг.техники',
+      desc: 'Ремонт или замена',
+    },
+    {
+      id: 'storage',
+      title: 'Сетевые папки/облачное хранилище',
+      desc: 'Настройка доступа',
+    },
+    {
+      id: 'install',
+      title: 'Установка ПО/Подключение ИС',
+      desc: 'Установка и настройка',
+    },
+    {
+      id: 'network',
+      title: 'Неполадки в сети',
+      desc: 'Подключение, разрывы',
+    },
+    {
+      id: 'workplace',
+      title: 'Подключение / перемещение рабочего места',
+      desc: 'Переезд или настройка',
+    },
+    {
+      id: 'signature',
+      title: 'Электронная подпись',
+      desc: 'Выпуск или замена',
+    },
+    {
+      id: 'secure-net',
+      title: 'Доступ в защищенную сеть (VipNet)/СКЗИ и СЗИ (Kaspersky, SecretNet)',
+      desc: 'Настройка доступа',
+    },
+    {
+      id: 'other',
+      title: 'Другое',
+      desc: 'Иные вопросы',
+    },
+  ],
+};
+
+// --- Пример defaultRequestContext ---
+// ВАЖНО: Замените этот объект на ваш реальный шаблон заявки
+const defaultRequestContext = {
+  context: {
+    application_type: [
+      {
+        code: 'zno',
+        name: 'ЗНО',
+      },
+    ],
+    priority: [
+      {
+        code: 'middle',
+        name: 'Средний',
+      },
+    ],
+    criticality: [
+      {
+        code: 'middle',
+        name: 'Средняя',
+      },
+    ],
+    urgency: [
+      {
+        code: 'medium',
+        name: 'Средняя',
+      },
+    ],
+    topic: 'Критический сбой в 1С:Бухгалтерия, ошибка прав доступа. Срыв сроков отчетности.',
+    contact_information: [
+      {
+        login: 'example',
+        type: 'telegram',
+      },
+    ],
+    responsible: [
+      '25f18c44-3d05-4b92-8dbf-b69b4a721b53',
+    ],
+    service: [
+      '019a2fab-8b5e-76ad-b2e3-86347f749a67',
+    ],
+    client_type: false,
+    working_mail: [
+      {
+        type: 'work',
+        email: 'mail@example.com',
+      },
+    ],
+    table_of_sla_indicators: {
+      rows: [
+        {
+          __id: '019a2fba-b10b-7078-a983-ab7f362e4989',
+          __count: null,
+          sla_level: [
+            '019a2fac-abcd-70b8-9c8f-40cfedc70ea0',
+          ],
+          reaction_time_string: '2 часа',
+          solution_time_string: '2 часа',
+          reaction_time_seconds: 40.253,
+          solution_time_seconds: null,
+          reaction_time_string_fact: '40 секунд',
+          solution_time_string_fact: '0 минут',
+        },
+      ],
+      view: '',
+      result: null,
+    },
+    sla_level: [
+      '019a2fac-abcd-70b8-9c8f-40cfedc70ea0',
+    ],
+    id_portal: '', // Будет генерироваться при отправке
+    aplicant: [
+      '019a2f92-8bf9-737b-96e8-b218caca58c6',
+    ],
+    application_text: '', // Будет подставляться из модального окна
+    contact_information: [
+      {
+        type: 'other',
+        login: 'kds+333@axonteam.ru',
+      },
+    ],
+  },
+};
+
 const SupportRequestsWidget = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
-  let status_elems=[]
+
   const navigate = useNavigate();
 
+  // --- Состояния для выпадающего меню ---
   const [anchorEl, setAnchorEl] = useState(null);
-  const open = Boolean(anchorEl);
+  const menuOpen = Boolean(anchorEl);
 
+  // --- Состояния для модального окна создания заявки ---
+  const [openCreate, setOpenCreate] = useState(false);
+  const [description, setDescription] = useState('');
+  const [isSending, setIsSending] = useState(false);
 
-  const handleClick = (event) => {
+  // --- Обработчики меню ---
+  const handleMenuClick = (event) => {
     setAnchorEl(event.currentTarget);
   };
 
-  const handleClose = () => {
+  const handleMenuClose = () => {
     setAnchorEl(null);
   };
 
-  const handleMenuItemClick = () => {
-    navigate('/services');
-    handleClose();
+  // --- Обработчики модального окна ---
+  const handleOpenCreate = () => {
+    setOpenCreate(true);
+    handleMenuClose(); // Закрываем меню при открытии модалки
   };
 
-  const fetchStatus = async () => {
+  const handleCloseCreate = () => {
+    setOpenCreate(false);
+    setDescription(''); // Сбрасываем описание при закрытии
+  };
+
+  // --- Обработчик клика по пункту меню (сервису) ---
+  const handleServiceItemClick = (serviceId) => {
+    console.log(`Выбран сервис: ${serviceId}`);
+    if (serviceId === 'admin') {
+      handleOpenCreate(); // Открываем модальное окно для "admin"
+    } else {
+      // Для других сервисов показываем уведомление или заглушку
+      const serviceName = servicesData.services.find((s) => s.id === serviceId)?.title || serviceId;
+      alert(
+        `Вы выбрали: ${serviceName}\n(Недоступно в демо-версии)`
+      );
+      handleMenuClose(); // Закрываем меню
+    }
+  };
+
+  // --- Обработчик кнопки "Прикрепить" в модальном окне ---
+  const handleSubmit = () => {
+    alert('Недоступно в демо-версии');
+    handleCloseCreate();
+  };
+
+  // --- Обработчик кнопки "Отправить" в модальном окне ---
+  const handleSend = async () => {
+    if (!description.trim()) {
+      alert('Пожалуйста, введите описание.');
+      return;
+    }
+
+    setIsSending(true);
+
     try {
-      const response = await fetch('http://localhost:3000/api/elma/check_status', {
+      // Генерируем уникальный ID для этой заявки
+      const requestId = generateSimpleUUID();
+
+      // Создаём копию объекта и подставляем текущее описание и ID
+      const requestToSend = {
+        ...defaultRequestContext,
+        context: {
+          ...defaultRequestContext.context,
+          application_text: description, // подставляем текст из поля "Описание"
+          id_portal: requestId, // подставляем уникальный ID
+        },
+      };
+
+      console.log('📤 Отправка заявки на сервер:', requestToSend);
+
+      // Отправляем на сервер
+      // ВАЖНО: Используйте правильный URL. Если у вас настроен proxy, используйте его.
+      // Например: '/api/elma/post_application'
+      const serverResponse = await fetch('https://api-surius.ru.tuna.am/api/elma/post_application', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        // Если сервер требует тело запроса, добавьте его здесь
-        // body: JSON.stringify({ /* данные, если нужны */ }),
+        body: JSON.stringify(requestToSend),
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (!serverResponse.ok) {
+        const errorText = await serverResponse.text();
+        throw new Error(
+          `Ошибка сервера: ${serverResponse.status} ${serverResponse.statusText}. ${errorText}`
+        );
       }
 
-      const statusData = await response.json();
-      console.log('Получен статус от сервера:', statusData);
-      status_elems=statusData
-      // --- Здесь обрабатывайте полученные данные ---
-      // Например, обновите другое состояние, если statusData что-то влияет на UI
-      // Для примера просто логируем
-      // setSomeStatusState(statusData); 
+      const serverResult = await serverResponse.json();
+      console.log('✅ Заявка успешно отправлена на сервер:', serverResult);
 
+      // Только после успешного ответа — сохраняем в localStorage
+      const existingApplications = JSON.parse(localStorage.getItem('applications') || '[]');
+      existingApplications.push({
+        ...requestToSend,
+        sentAt: new Date().toISOString(), // Добавляем временную метку
+        // serverResponse: serverResult, // Опционально: сохранить ответ сервера
+      });
+      localStorage.setItem('applications', JSON.stringify(existingApplications));
+
+      console.log('💾 Заявка сохранена в localStorage');
+
+      // Закрываем модальное окно и сбрасываем состояние
+      handleCloseCreate();
     } catch (error) {
-      console.error('Ошибка при получении статуса:', error);
-      // Опционально: показать уведомление пользователю
+      console.error('❌ Ошибка при обработке заявки:', error);
+      alert('Не удалось обработать заявку: ' + error.message);
+    } finally {
+      setIsSending(false);
     }
   };
-  
-  // --- Эффект для загрузки заявок из localStorage ---
+
+  // --- Эффект для загрузки заявок из localStorage и поллинга ---
   useEffect(() => {
     let loadTimerId;
     let pollIntervalId;
@@ -87,11 +326,13 @@ const SupportRequestsWidget = () => {
     const fetchStatusUpdates = async () => {
       try {
         console.log('🔁 Запрос обновлений статуса у сервера...');
-        const response = await fetch('/api/elma/check_status', {
+        // Используем правильный URL, возможно, с proxy
+        const response = await fetch('https://api-surius.ru.tuna.am/api/elma/check_status', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
+          // body: JSON.stringify({ action: 'getStatusUpdates' }), // Опционально
         });
 
         if (!response.ok) {
@@ -103,115 +344,65 @@ const SupportRequestsWidget = () => {
         console.log('📥 Получены обновления статуса от сервера:', statusUpdatesArray);
 
         if (Array.isArray(statusUpdatesArray) && statusUpdatesArray.length > 0) {
-          
-          setRequests(prevRequests => {
+          setRequests((prevRequests) => {
             let hasChanges = false;
             const updatedRequests = [...prevRequests];
-            // Будем также обновлять localStorage
             let storedApplications = JSON.parse(localStorage.getItem('applications') || '[]');
             let localStorageUpdated = false;
 
-            statusUpdatesArray.forEach(update => {
+            statusUpdatesArray.forEach((update) => {
               const { id: serverId, status: newStatus } = update;
 
               if (serverId && newStatus !== undefined) {
-                const indexToUpdate = updatedRequests.findIndex(req => req.id === serverId);
+                const indexToUpdate = updatedRequests.findIndex((req) => req.id === serverId);
 
-                if (indexToUpdate !== -1 && updatedRequests[indexToUpdate].status !== newStatus) {
-                  console.log(`🔄 Обновление статуса для заявки ${serverId}: ${updatedRequests[indexToUpdate].status} -> ${newStatus}`);
-                  
-                  // Обновляем состояние React
+                if (
+                  indexToUpdate !== -1 &&
+                  updatedRequests[indexToUpdate].status !== newStatus
+                ) {
+                  console.log(
+                    `🔄 Обновление статуса для заявки ${serverId}: ${updatedRequests[indexToUpdate].status} -> ${newStatus}`
+                  );
                   updatedRequests[indexToUpdate] = {
                     ...updatedRequests[indexToUpdate],
                     status: newStatus,
                   };
                   hasChanges = true;
 
-                  // Обновляем данные в storedApplications (для последующего сохранения в localStorage)
-                  const storageIndexToUpdate = storedApplications.findIndex(item => 
-                    item.context?.id_portal === serverId
+                  const storageIndexToUpdate = storedApplications.findIndex(
+                    (item) => item.context?.id_portal === serverId
                   );
                   if (storageIndexToUpdate !== -1) {
-                    // Здесь можно обновить любые другие поля, если они приходят в update
-                    // Пока обновляем только статус в отдельном поле или имитируем
-                    // Для примера, добавим поле lastStatusUpdate в сам item, если нужно отслеживать
-                    // Но чаще всего сервер присылает полный объект или изменения
-                    // Предположим, сервер присылает полный объект заявки или нужно обновить конкретные поля
-                    
-                    // Если сервер присылает полный объект заявки, заменяем его
-                    // Но в вашем случае он присылает только id и status
-                    // Можно добавить логику обновления других полей аналогично
-                    
-                    localStorageUpdated = true; // Флаг, что были изменения в данных для LS
+                    storedApplications[storageIndexToUpdate].currentStatus = newStatus;
+                    localStorageUpdated = true;
                   }
                 }
               }
             });
 
-            // Если были изменения в React, обновляем состояние
             if (hasChanges) {
-              // Также обновляем localStorage, если были изменения
               if (localStorageUpdated) {
                 try {
-                  // Обновляем каждую заявку в storedApplications, если её статус изменился
-                  statusUpdatesArray.forEach(update => {
-                    const { id: serverId, status: newStatus } = update;
-                    const storageIndex = storedApplications.findIndex(item => 
-                      item.context?.id_portal === serverId
-                    );
-                    if (storageIndex !== -1 && storedApplications[storageIndex].lastUpdatedStatus !== newStatus) {
-                      // Добавляем или обновляем поле статуса в контексте или отдельно
-                      // ВАЖНО: Определимся, как именно хранить статус в localStorage
-                      // Вариант 1: Добавить отдельное поле в объект item
-                      storedApplications[storageIndex].lastUpdatedStatus = newStatus;
-                      // Вариант 2: Обновить статус внутри context (если сервер присылает его так)
-                      // Но если сервер присылает только id и status, нужно решить, как хранить
-                      
-                      // Для простоты, добавим поле lastUpdatedStatus в сам item
-                      // Или обновим статус в отдельном объекте статусов, если нужно
-                      
-                      // ПРЕДПОЛОЖИМ, что мы хотим обновлять "дефолтный" статус в localStorage
-                      // Это сложнее, так как в localStorage у нас полный объект заявки
-                      // Нужно решить, что делать. 
-                      
-                      // ЛУЧШЕ: Хранить актуальный статус прямо в состоянии React
-                      // и при необходимости (например, перезагрузка страницы) 
-                      // оттуда брать. А localStorage использовать как "архив" начальных данных.
-                      // 
-                      // Но если ТРЕБУЕТСЯ, чтобы изменения сохранялись в localStorage:
-                      // 
-                      // Мы можем:
-                      // 1. Добавить в каждый item в localStorage поле `currentStatus`
-                      // 2. Или хранить отдельный объект статусов в localStorage
-                      // 
-                      // Реализуем вариант 1: добавим `currentStatus` в item localStorage
-                      storedApplications[storageIndex].currentStatus = newStatus;
-                    }
-                  });
-                  
-                  // Сохраняем обновлённый массив в localStorage
                   localStorage.setItem('applications', JSON.stringify(storedApplications));
                   console.log('💾 Обновленные данные заявок сохранены в localStorage.');
                 } catch (e) {
                   console.error('Ошибка при сохранении обновлений в localStorage:', e);
                 }
               }
-              
               return updatedRequests;
             }
-            
             return prevRequests;
           });
         } else {
-          console.log("ℹ️ Сервер вернул пустой массив или не массив. Нет обновлений статуса.");
+          console.log(
+            'ℹ️ Сервер вернул пустой массив или не массив. Нет обновлений статуса.'
+          );
         }
-
       } catch (error) {
         console.error('❌ Ошибка при получении/обработке обновлений статуса через поллинг:', error);
       }
     };
 
-    // --- 1. Начальная загрузка данных из localStorage ---
     loadTimerId = setTimeout(() => {
       try {
         console.log('📂 Загрузка существующих заявок из localStorage...');
@@ -228,13 +419,9 @@ const SupportRequestsWidget = () => {
           }
         }
 
-        // Преобразуем данные из localStorage в формат, ожидаемый SupportRequestCard
-        // УЧИТЫВАЕМ currentStatus из localStorage, если он есть
-        const formattedRequests = storedRequests.map(storageItem => {
+        const formattedRequests = storedRequests.map((storageItem) => {
           const context = storageItem.context || {};
           const appId = context.id_portal || generateSimpleUUID();
-          
-          // Берем статус из поля currentStatus (если обновлялся), иначе дефолтный
           const initialStatus = storageItem.currentStatus || 'Новая';
 
           return {
@@ -244,7 +431,7 @@ const SupportRequestsWidget = () => {
             initiator: 'Демо-пользователь',
             type: 'Администрирование ИС/ОС | Права доступа',
             description: context.application_text || 'Описание отсутствует',
-            status: initialStatus, // <- Используем сохранённый или дефолтный статус
+            status: initialStatus,
             assignee: '—',
           };
         });
@@ -259,15 +446,14 @@ const SupportRequestsWidget = () => {
         console.log('🏁 Первоначальная загрузка завершена.');
       }
 
-      // --- 2. Запуск периодического поллинга ---
       console.log('📡 Запуск поллинга статуса (/api/elma/check_status) каждые 10 секунд...');
       fetchStatusUpdates();
       pollIntervalId = setInterval(() => {
         console.log('🔁 Выполнение периодического запроса статуса...');
         fetchStatusUpdates();
-      }, 10000);
+      }, 10000); // Каждые 10 секунд
 
-    }, 500);
+    }, 500); // Небольшая задержка для имитации загрузки
 
     return () => {
       console.log('🧹 Очистка ресурсов компонента...');
@@ -280,12 +466,16 @@ const SupportRequestsWidget = () => {
         console.log('⏰ Интервал поллинга остановлен.');
       }
     };
-  }, []);
-
+  }, []); // Пустой массив зависимостей - эффект выполняется только при монтировании
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight={isMobile ? '80px' : '100px'}>
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight={isMobile ? '80px' : '100px'}
+      >
         <Typography variant={isMobile ? 'body2' : 'body1'}>Загрузка заявок...</Typography>
       </Box>
     );
@@ -300,7 +490,7 @@ const SupportRequestsWidget = () => {
             <Button
               variant="contained"
               size={isMobile ? 'small' : 'medium'}
-              onClick={handleClick}
+              onClick={handleMenuClick} // Открывает меню
               sx={{
                 borderRadius: { xs: 1.5, sm: 2 },
                 textTransform: 'none',
@@ -316,38 +506,169 @@ const SupportRequestsWidget = () => {
             >
               + Заявка
             </Button>
-            <Menu
+
+            {/* --- Выпадающее меню со списком всех сервисов --- */}
+             <Menu
               anchorEl={anchorEl}
-              open={open}
-              onClose={handleClose}
-              onClick={handleClose}
+              open={menuOpen}
+              onClose={handleMenuClose}
+              onClick={handleMenuClose}
+              // --- Исправленные свойства позиционирования ---
+              anchorOrigin={{
+                vertical: 'top',    // Верх кнопки
+                horizontal: 'right', // Правый край кнопки
+              }}
+              transformOrigin={{
+                vertical: 'top',    // Верх меню
+                horizontal: 'left', // Левый край меню
+              }}
+              // ---------------------------------------------
               PaperProps={{
                 elevation: 4,
-                sx: { borderRadius: 2 },
+                sx: {
+                  borderRadius: 2,
+                  maxHeight: '70vh',
+                  overflowY: 'auto',
+                  mt: 0.5, // Небольшой отступ сверху, чтобы не прилипало вплотную
+                  mr: 0.5, // Небольшой отступ справа, если нужно
+                },
               }}
-              transformOrigin={{ horizontal: 'left', vertical: 'top' }}
-              anchorOrigin={{ horizontal: 'left', vertical: 'bottom' }}
             >
-              <MenuItem onClick={handleMenuItemClick}>
-                <ListItemIcon>
-                  <SupportAgentIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText primary="Заявка в техподдержку" />
+              {/* Заголовок меню */}
+              <MenuItem disabled>
+                <ListItemText
+                  primary={servicesData.title}
+                  primaryTypographyProps={{ fontWeight: 'bold' }}
+                />
               </MenuItem>
+              <Divider />
+
+              {/* Динамически создаем пункты меню из servicesData.services */}
+              {servicesData.services.map((service) => (
+                <MenuItem
+                  key={service.id}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleServiceItemClick(service.id);
+                  }}
+                  sx={{ py: 1 }}
+                >
+                  <ListItemIcon>
+                    {service.id === 'admin' ? (
+                      <SupportAgentIcon fontSize="small" color="primary" />
+                    ) : (
+                      <BuildIcon fontSize="small" />
+                    )}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={service.title}
+                    secondary={service.desc}
+                    primaryTypographyProps={{
+                      fontWeight: service.id === 'admin' ? 600 : 500,
+                    }}
+                    secondaryTypographyProps={{ variant: 'caption', color: 'text.secondary' }}
+                  />
+                </MenuItem>
+              ))}
             </Menu>
           </div>
         </Box>
       )}
+
+      {/* --- Модальное окно для создания заявки "admin" --- */}
+      <Modal open={openCreate} onClose={handleCloseCreate}>
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: { xs: '90%', sm: 400 }, // Адаптивная ширина
+            bgcolor: 'background.paper',
+            borderRadius: 2,
+            boxShadow: 24,
+            p: 3,
+            maxHeight: '90vh',
+            overflowY: 'auto', // Скролл внутри модального окна
+          }}
+        >
+          <Typography sx={{ padding: '0 0 8px 0' }} variant="h6" fontWeight={600} gutterBottom>
+            Администрирование ИС/ОС | Права доступа
+          </Typography>
+          <TextField
+            label="Описание"
+            multiline
+            rows={4}
+            fullWidth
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            sx={{ mb: 2 }}
+          />
+          <Divider sx={{ my: 2 }} />
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-start',
+              gap: 1,
+            }}
+          >
+            <Tooltip title="Недоступно в демо-версии" arrow>
+              <Button
+                variant="outlined"
+                startIcon={<AttachFileIcon />}
+                onClick={handleSubmit}
+                sx={{
+                  color: 'text.primary',
+                  borderColor: 'grey.400',
+                  '&:hover': {
+                    backgroundColor: 'grey.50',
+                    borderColor: 'grey.500',
+                  },
+                }}
+              >
+                Прикрепить
+              </Button>
+            </Tooltip>
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: 1,
+                width: '100%',
+                mt: 1, // Отступ сверху
+              }}
+            >
+              <Button onClick={handleCloseCreate} disabled={isSending}>
+                Отмена
+              </Button>
+              <Button
+                variant="contained"
+                onClick={handleSend}
+                disabled={isSending || !description.trim()} // Отключаем, если пусто или отправляется
+                sx={{
+                  color: 'white',
+                  backgroundColor: 'primary.main',
+                  '&:hover': {
+                    backgroundColor: 'primary.dark',
+                  },
+                }}
+              >
+                {isSending ? 'Отправка...' : 'Отправить'}
+              </Button>
+            </Box>
+          </Box>
+        </Box>
+      </Modal>
 
       {/* Список заявок или сообщение "пусто" */}
       {requests.length > 0 ? (
         <Box>
           {requests.map((request) => (
             <SupportRequestCard
-              key={request.id} // Используем уникальный ID из заявки
+              key={request.id}
               request={request}
               onClick={() => {
-                // В демо — показываем уведомление
                 alert('Недоступно в демо-версии');
               }}
             />
