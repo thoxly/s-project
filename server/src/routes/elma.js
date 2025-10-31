@@ -120,8 +120,12 @@ router.post('/get_application', async (req, res) => {
             // Если данные уже в context
             updateData.context = { ...existingRequest.context, ...applicationData.context };
             updateData.context.id_portal = idPortal;
-            // Обрабатываем solution_description: если не null, сохраняем
-            if (applicationData.context.solution_description !== null && applicationData.context.solution_description !== undefined) {
+            // Обрабатываем solution_description: проверяем верхний уровень (приоритет) и context
+            if (applicationData.solution_description !== null && applicationData.solution_description !== undefined) {
+              // Приоритет верхнему уровню, если он есть
+              updateData.context.solution_description = applicationData.solution_description;
+            } else if (applicationData.context.solution_description !== null && applicationData.context.solution_description !== undefined) {
+              // Если нет на верхнем уровне, берем из context
               updateData.context.solution_description = applicationData.context.solution_description;
             }
           } else {
@@ -169,11 +173,13 @@ router.post('/get_application', async (req, res) => {
             ...(applicationData.initiator && { aplicant: [applicationData.initiator] }),
           };
           
-          // Обрабатываем solution_description: если не null, добавляем в context
-          if (applicationData.context?.solution_description !== null && applicationData.context?.solution_description !== undefined) {
-            contextData.solution_description = applicationData.context.solution_description;
-          } else if (applicationData.solution_description !== null && applicationData.solution_description !== undefined) {
+          // Обрабатываем solution_description: проверяем верхний уровень (приоритет) и context
+          if (applicationData.solution_description !== null && applicationData.solution_description !== undefined) {
+            // Приоритет верхнему уровню, если он есть
             contextData.solution_description = applicationData.solution_description;
+          } else if (applicationData.context?.solution_description !== null && applicationData.context?.solution_description !== undefined) {
+            // Если нет на верхнем уровне, берем из context
+            contextData.solution_description = applicationData.context.solution_description;
           }
           
           const newRequest = new SupportRequest({
