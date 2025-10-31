@@ -34,7 +34,8 @@ import {
   Description as DescriptionIcon,
   Info as InfoIcon,
 } from '@mui/icons-material';
-
+// Добавьте в список импортов из '@mui/material'
+import {  CheckCircle as CheckCircleIcon, ErrorOutline as ErrorOutlineIcon } from '@mui/icons-material';
 // --- Вспомогательная функция для генерации UUID ---
 function generateSimpleUUID() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -134,6 +135,7 @@ const servicesData = {
 // ВАЖНО: Замените этот объект на ваш реальный шаблон заявки
 const defaultRequestContext = {
   context: {
+    __name:'',
     application_type: [
       {
         code: 'zno',
@@ -178,6 +180,9 @@ const defaultRequestContext = {
         email: 'mail@example.com',
       },
     ],
+    "current_support_level": [
+        "019a2f5f-9117-770d-ba20-73d528ca2155"
+      ],
     table_of_sla_indicators: {
       rows: [
         {
@@ -236,6 +241,10 @@ const SupportRequestsWidget = () => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [requestDetails, setRequestDetails] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
+  // --- Состояния для модального окна создания ---
+  const [sendResult, setSendResult] = useState(null); // 'success' | 'error' | 'db_warning' | null
+  const [sendMessage, setSendMessage] = useState('');
+  const [dbWarningMessage, setDbWarningMessage] = useState('');
 
   // --- Обработчики меню ---
   const handleMenuClick = (event) => {
@@ -254,7 +263,15 @@ const SupportRequestsWidget = () => {
 
   const handleCloseCreate = () => {
     setOpenCreate(false);
-    setDescription(''); // Сбрасываем описание при закрытии
+    setDescription('');
+    setIsSending(false);
+    setSendResult(null); // Сброс результата
+    setSendMessage('');  // Сброс сообщения
+    setDbWarningMessage(''); // Сброс предупреждения
+  };
+
+  const handleOkAfterSuccess = () => {
+    handleCloseCreate(); // Закрываем и сбрасываем всё
   };
 
   // --- Обработчик клика по пункту меню (сервису) ---
@@ -366,81 +383,39 @@ const SupportRequestsWidget = () => {
   // --- Обработчик кнопки "Отправить" в модальном окне ---
   const handleSend = async () => {
     if (!description.trim()) {
-      alert('Пожалуйста, введите описание.');
+      // Вместо alert, покажем сообщение в модалке
+      setSendResult('error');
+      setSendMessage('Пожалуйста, введите описание.');
       return;
     }
 
     setIsSending(true);
+    setSendResult(null); // Сброс результата перед новой отправкой
+    setSendMessage('');  // Сброс сообщения
+    setDbWarningMessage(''); // Сброс предупреждения
 
     try {
-      // Генерируем уникальный ID для этой заявки
+      // --- 1. Генерируем уникальный ID для этой заявки ---
       const requestId = generateSimpleUUID();
 
-      // Создаём копию объекта и подставляем текущее описание и ID
+      // --- 2. Формируем название заявки вида SD-XXXXXX ---
+      const ticketNumber = 'SD-' + requestId.split('-')[0].substring(0, 6).toUpperCase();
+
+      // --- 3. Создаём копию объекта и подставляем текущее описание, ID и __name ---
       const requestToSend = {
         ...defaultRequestContext,
         context: {
           ...defaultRequestContext.context,
+          __name: ticketNumber,        // ← Подставляем сформированное имя
           application_text: description, // подставляем текст из поля "Описание"
-          id_portal: requestId, // подставляем уникальный ID
+          id_portal: requestId,         // подставляем уникальный ID
         },
       };
 
       console.log('📤 Отправка заявки на сервер:', requestToSend);
 
-      // Сначала сохраняем в MongoDB через API
-      // Используем относительный путь, Vite proxy перенаправит на localhost:3000
-      const apiBaseUrl = '';
-      
-      console.log('💾 Сохранение заявки в БД:', {
-        url: `${apiBaseUrl}/api/requests/support`,
-        data: {
-          ...requestToSend,
-          sentAt: new Date().toISOString(),
-          currentStatus: 'Новая',
-        }
-      });
-      
-      const saveToDbResponse = await fetch(`${apiBaseUrl}/api/requests/support`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...requestToSend,
-          sentAt: new Date().toISOString(),
-          currentStatus: 'Новая',
-        }),
-      });
-
-      if (!saveToDbResponse.ok) {
-        let errorData;
-        try {
-          errorData = await saveToDbResponse.json();
-        } catch (e) {
-          errorData = { error: await saveToDbResponse.text() };
-        }
-        
-        console.error('❌ Ошибка сохранения в БД:', {
-          status: saveToDbResponse.status,
-          statusText: saveToDbResponse.statusText,
-          error: errorData
-        });
-        
-        // Если MongoDB не подключена, показываем пользователю предупреждение
-        if (saveToDbResponse.status === 503) {
-          alert(`⚠️ Внимание: Заявка не сохранена в базе данных.\nПричина: ${errorData.error || 'MongoDB не подключена'}\n\nЗаявка будет отправлена в ELMA, но не будет сохранена локально.`);
-        } else {
-          // Для других ошибок также показываем предупреждение
-          alert(`⚠️ Внимание: Заявка не сохранена в базе данных.\nСтатус: ${saveToDbResponse.status}\nОшибка: ${errorData.error || 'Неизвестная ошибка'}`);
-        }
-      } else {
-        const dbResult = await saveToDbResponse.json();
-        console.log('✅ Заявка сохранена в MongoDB:', dbResult);
-      }
-
-      // Отправляем в ELMA
-      const elmaResponse = await fetch(`${apiBaseUrl}/api/elma/post_application`, {
+      // --- 4. Отправляем в ELMA ---
+      const elmaResponse = await fetch('/api/elma/post_application', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -458,14 +433,87 @@ const SupportRequestsWidget = () => {
       const elmaResult = await elmaResponse.json();
       console.log('✅ Заявка успешно отправлена в ELMA:', elmaResult);
 
-      // Обновляем список заявок из API
+      // --- 5. Пытаемся сохранить в MongoDB ---
+      let dbSaveSuccess = true;
+      let dbErrorDetails = null;
+      const apiBaseUrl = '';
+
+      try {
+        console.log('💾 Сохранение заявки в БД:', {
+          url: `${apiBaseUrl}/api/requests/support`,
+          data: {
+            ...requestToSend,
+            sentAt: new Date().toISOString(),
+            currentStatus: 'Новая',
+          }
+        });
+
+        const saveToDbResponse = await fetch(`${apiBaseUrl}/api/requests/support`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ...requestToSend,
+            sentAt: new Date().toISOString(),
+            currentStatus: 'Новая',
+          }),
+        });
+
+        if (!saveToDbResponse.ok) {
+          let errorData;
+          try {
+            errorData = await saveToDbResponse.json();
+          } catch (e) {
+            errorData = { error: await saveToDbResponse.text() };
+          }
+
+          console.error('❌ Ошибка сохранения в БД:', {
+            status: saveToDbResponse.status,
+            statusText: saveToDbResponse.statusText,
+            error: errorData
+          });
+
+          dbSaveSuccess = false;
+          dbErrorDetails = {
+            status: saveToDbResponse.status,
+            statusText: saveToDbResponse.statusText,
+            error: errorData.error || 'Неизвестная ошибка'
+          };
+        } else {
+          const dbResult = await saveToDbResponse.json();
+          console.log('✅ Заявка сохранена в MongoDB:', dbResult);
+        }
+      } catch (dbError) {
+        console.error('❌ Исключение при сохранении в БД:', dbError);
+        dbSaveSuccess = false;
+        dbErrorDetails = {
+          error: dbError.message
+        };
+      }
+
+      // --- 6. Обновляем список заявок из API ---
       await loadRequestsFromAPI();
 
+      // --- 7. Формируем сообщение и состояние ---
+      if (dbSaveSuccess) {
+        // Если успешно сохранили в БД
+        setSendResult('success');
+        setSendMessage(`Заявка ${ticketNumber} успешно отправлена в ELMA и сохранена в базе данных.`);
+      } else {
+        // Если не удалось сохранить в БД
+        setSendResult('db_warning');
+        setSendMessage(`Заявка ${ticketNumber} успешно отправлена в ELMA.`);
+        setDbWarningMessage(`⚠️ Внимание: Заявка не сохранена в базе данных.\nСтатус: ${dbErrorDetails.status} ${dbErrorDetails.statusText}\nОшибка: ${dbErrorDetails.error}`);
+      }
+
       // Закрываем модальное окно и сбрасываем состояние
-      handleCloseCreate();
+      // handleCloseCreate(); // Не закрываем автоматически при предупреждении
     } catch (error) {
       console.error('❌ Ошибка при обработке заявки:', error);
-      alert('Не удалось обработать заявку: ' + error.message);
+      // --- Устанавливаем состояние ошибки ---
+      setSendResult('error');
+      setSendMessage(`Не удалось отправить заявку: ${error.message}`);
     } finally {
       setIsSending(false);
     }
@@ -501,8 +549,7 @@ const SupportRequestsWidget = () => {
           return {
             id: appId,
             ticketNumber: 'SD-' + appId.split('-')[0].substring(0, 6).toUpperCase(),
-            createdAt: storageItem.sentAt || storageItem.createdAt || new Date().toISOString(),
-            initiator: 'Демо-пользователь',
+            createdAt: storageItem.sentAt || new Date().toISOString(),
             type: 'Администрирование ИС/ОС | Права доступа',
             description: context.application_text || 'Описание отсутствует',
             status: initialStatus,
@@ -615,7 +662,7 @@ const SupportRequestsWidget = () => {
   return (
     <Box>
       {/* Кнопка "+ Заявка" отображается только если список пуст */}
-      {requests.length === 0 && (
+      
         <Box sx={{ display: 'flex', justifyContent: 'flex-start', mb: 2 }}>
           <div>
             <Button
@@ -704,17 +751,17 @@ const SupportRequestsWidget = () => {
             </Menu>
           </div>
         </Box>
-      )}
 
-      {/* --- Модальное окно для создания заявки "admin" --- */}
       <Modal open={openCreate} onClose={handleCloseCreate}>
         <Box
           sx={{
+            // --- Стили позиционирования и размера ---
             position: 'absolute',
             top: '50%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
             width: { xs: '90%', sm: 400 }, // Адаптивная ширина
+            // --- Стили оформления ---
             bgcolor: 'background.paper',
             borderRadius: 2,
             boxShadow: 24,
@@ -723,72 +770,128 @@ const SupportRequestsWidget = () => {
             overflowY: 'auto', // Скролл внутри модального окна
           }}
         >
-          <Typography sx={{ padding: '0 0 8px 0' }} variant="h6" fontWeight={600} gutterBottom>
-            Администрирование ИС/ОС | Права доступа
-          </Typography>
-          <TextField
-            label="Описание"
-            multiline
-            rows={4}
-            fullWidth
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            sx={{ mb: 2 }}
-          />
-          <Divider sx={{ my: 2 }} />
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-start',
-              gap: 1,
-            }}
-          >
-            <Tooltip title="Недоступно в демо-версии" arrow>
-              <Button
-                variant="outlined"
-                startIcon={<AttachFileIcon />}
-                onClick={handleSubmit}
-                sx={{
-                  color: 'text.primary',
-                  borderColor: 'grey.400',
-                  '&:hover': {
-                    backgroundColor: 'grey.50',
-                    borderColor: 'grey.500',
-                  },
-                }}
-              >
-                Прикрепить
-              </Button>
-            </Tooltip>
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'flex-end',
-                gap: 1,
-                width: '100%',
-                mt: 1, // Отступ сверху
-              }}
-            >
-              <Button onClick={handleCloseCreate} disabled={isSending}>
-                Отмена
-              </Button>
+          {/* --- Условный рендеринг: сообщение или форма --- */}
+          {sendResult === 'success' || sendResult === 'error' || sendResult === 'db_warning' ? (
+            // --- Отображение результата отправки ---
+            <Box sx={{ textAlign: 'center', py: 2 }}>
+              {sendResult === 'success' ? (
+                <Box sx={{ color: 'success.main', mb: 2 }}>
+                  <CheckCircleIcon sx={{ fontSize: 60, mb: 1 }} />
+                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                    Успешно!
+                  </Typography>
+                </Box>
+              ) : (
+                <Box sx={{ color: 'error.main', mb: 2 }}>
+                  {sendResult === 'db_warning' ? (
+                    <ErrorOutlineIcon sx={{ fontSize: 60, mb: 1 }} />
+                  ) : (
+                    <ErrorOutlineIcon sx={{ fontSize: 60, mb: 1 }} />
+                  )}
+                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                    {sendResult === 'db_warning' ? 'Предупреждение' : 'Ошибка'}
+                  </Typography>
+                </Box>
+              )}
+              <Typography variant="body1" sx={{ mb: 3 }}>
+                {sendMessage}
+              </Typography>
+              {sendResult === 'db_warning' && (
+                <Typography variant="body2" color="warning.main" sx={{ mb: 3, whiteSpace: 'pre-line' }}>
+                  {dbWarningMessage}
+                </Typography>
+              )}
               <Button
                 variant="contained"
-                onClick={handleSend}
-                disabled={isSending || !description.trim()} // Отключаем, если пусто или отправляется
+                onClick={handleOkAfterSuccess} // Всегда закрываем по OK
                 sx={{
                   color: 'white',
-                  backgroundColor: 'primary.main',
+                  backgroundColor: sendResult === 'success' ? 'success.main' : (sendResult === 'db_warning' ? 'warning.main' : 'error.main'),
                   '&:hover': {
-                    backgroundColor: 'primary.dark',
+                    backgroundColor: sendResult === 'success' ? 'success.dark' : (sendResult === 'db_warning' ? 'warning.dark' : 'error.dark'),
                   },
                 }}
               >
-                {isSending ? 'Отправка...' : 'Отправить'}
+                OK
               </Button>
             </Box>
-          </Box>
+          ) : isSending ? (
+            // --- Отображение спиннера во время отправки ---
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 4 }}>
+              <CircularProgress size={40} sx={{ mb: 2 }} />
+              <Typography variant="body1">Отправка заявки...</Typography>
+            </Box>
+          ) : (
+            // --- Отображение формы ввода ---
+            <>
+              <Typography sx={{ padding: '0 0 8px 0' }} variant="h6" fontWeight={600} gutterBottom>
+                Администрирование ИС/ОС | Права доступа
+              </Typography>
+              <TextField
+                label="Описание"
+                multiline
+                rows={4}
+                fullWidth
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                sx={{ mb: 2 }}
+              />
+              <Divider sx={{ my: 2 }} />
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'flex-start',
+                  gap: 1,
+                }}
+              >
+                <Tooltip title="Недоступно в демо-версии" arrow>
+                  <Button
+                    variant="outlined"
+                    startIcon={<AttachFileIcon />}
+                    onClick={handleSubmit}
+                    sx={{
+                      color: 'text.primary',
+                      borderColor: 'grey.400',
+                      '&:hover': {
+                        backgroundColor: 'grey.50',
+                        borderColor: 'grey.500',
+                      },
+                    }}
+                  >
+                    Прикрепить
+                  </Button>
+                </Tooltip>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                    gap: 1,
+                    width: '100%',
+                    mt: 1,
+                  }}
+                >
+                  <Button onClick={handleCloseCreate} disabled={isSending}>
+                    Отмена
+                  </Button>
+                  <Button
+                    variant="contained"
+                    onClick={handleSend}
+                    disabled={isSending || !description.trim()}
+                    sx={{
+                      color: 'white',
+                      backgroundColor: 'primary.main',
+                      '&:hover': {
+                        backgroundColor: 'primary.dark',
+                      },
+                    }}
+                  >
+                    Отправить
+                  </Button>
+                </Box>
+              </Box>
+            </>
+          )}
         </Box>
       </Modal>
 

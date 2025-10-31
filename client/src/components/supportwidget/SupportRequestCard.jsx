@@ -13,9 +13,9 @@ import {
 const statusColors = {
   'Новая': 'default',
   'В работе': 'info',
-  'На уточнении': 'warning',
+  'Принята':'secondary',
+  'На согласовании': 'warning',
   'Закрыта': 'success',
-  'Отложена': 'secondary',
   'Отменена': 'error',
   'Выполнена':'success'
   // Добавьте другие статусы по необходимости
@@ -42,7 +42,6 @@ const SupportRequestCard = ({ request, onClick }) => {
   const {
     ticketNumber = '—',
     createdAt,
-    initiator = '—',
     type = '—',
     description = '',
     status = 'Неизвестно',
@@ -128,9 +127,6 @@ const SupportRequestCard = ({ request, onClick }) => {
         <Box sx={{ minWidth: 0 }}>
           <Typography variant="caption" color="text.secondary" noWrap>
             {formatDate(createdAt)}
-          </Typography>
-          <Typography variant="caption" display="block" color="text.secondary" noWrap>
-            {initiator}
           </Typography>
         </Box>
       </Box>
