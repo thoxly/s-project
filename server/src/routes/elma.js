@@ -1,11 +1,26 @@
 const express = require('express');
 const axios = require('axios');
 const router = express.Router();
+const mongoose = require('mongoose');
 
 // ELMA365 API configuration
 const ELMA_API_URL = process.env.ELMA_API_URL;
 const ELMA_TOKEN = process.env.ELMA_TOKEN;
-let status_check_arr=[]
+
+// Попытка загрузить модель, если MongoDB подключена
+let SupportRequest;
+try {
+  SupportRequest = require('../models/SupportRequest');
+} catch (error) {
+  console.warn('⚠️  SupportRequest model not available');
+}
+
+// Проверка подключения к MongoDB
+const isMongoConnected = () => {
+  const readyState = mongoose.connection.readyState;
+  const hasModel = !!SupportRequest;
+  return readyState === 1 && hasModel;
+};
 
 // CORS middleware для этого роутера - МАКСИМАЛЬНО ЛИБЕРАЛЬНАЯ ПОЛИТИКА
 router.use((req, res, next) => {
@@ -27,43 +42,151 @@ router.use((req, res, next) => {
 });
 router.post('/get_application', async (req, res) => {
   try {
-    // req.body — это defaultRequestContext, который пришёл с фронта
+    // req.body — это defaultRequestContext, который пришёл от ELMA
     const applicationData = req.body;
-    status_check_arr.push(applicationData)
-    console.log('длина массива',status_check_arr.length)
-    console.log('Получен запрос на обновление заявки:', applicationData);
+    console.log('📥 Получен webhook от ELMA с обновлением заявки:', JSON.stringify(applicationData, null, 2));
 
-    res.json({ message: 'Заявка успешно получена', receivedData: applicationData });
+    // Извлекаем id_portal и статус из данных
+    // ELMA может отправлять данные в разных форматах, пробуем разные варианты
+    let idPortal = null;
+    let newStatus = null;
+
+    // Вариант 1: данные в корне объекта
+    if (applicationData.id_portal || applicationData.id) {
+      idPortal = applicationData.id_portal || applicationData.id;
+    }
+    
+    // Вариант 2: данные в context
+    if (applicationData.context && applicationData.context.id_portal) {
+      idPortal = applicationData.context.id_portal;
+    }
+
+    // Извлекаем статус (может быть в разных полях)
+    if (applicationData.status) {
+      newStatus = applicationData.status;
+    } else if (applicationData.currentStatus) {
+      newStatus = applicationData.currentStatus;
+    } else if (applicationData.context && applicationData.context.status) {
+      newStatus = applicationData.context.status;
+    }
+
+    console.log('🔍 Извлеченные данные:', { idPortal, newStatus });
+
+    if (!idPortal) {
+      console.warn('⚠️  Не удалось извлечь id_portal из данных ELMA');
+      return res.status(400).json({ 
+        success: false,
+        error: 'Отсутствует id_portal в данных от ELMA',
+        receivedData: applicationData
+      });
+    }
+
+    // Сохраняем или обновляем заявку в MongoDB
+    if (isMongoConnected()) {
+      try {
+        // Ищем существующую заявку
+        const existingRequest = await SupportRequest.findOne({ 
+          'context.id_portal': idPortal 
+        });
+
+        if (existingRequest) {
+          // Обновляем существующую заявку
+          const updateData = {
+            updatedAt: new Date()
+          };
+
+          // Обновляем статус, если он указан
+          if (newStatus) {
+            updateData.currentStatus = newStatus;
+          }
+
+          // Обновляем context, если пришли новые данные
+          if (applicationData.context) {
+            updateData.context = applicationData.context;
+          } else if (applicationData) {
+            // Если весь объект - это context
+            updateData.context = { ...existingRequest.context, ...applicationData };
+            if (idPortal) {
+              updateData.context.id_portal = idPortal;
+            }
+          }
+
+          const updatedRequest = await SupportRequest.findOneAndUpdate(
+            { 'context.id_portal': idPortal },
+            updateData,
+            { new: true, runValidators: true }
+          );
+
+          console.log('✅ Заявка обновлена в MongoDB:', {
+            id_portal: idPortal,
+            status: updatedRequest.currentStatus
+          });
+
+          return res.json({ 
+            success: true,
+            message: 'Заявка успешно обновлена в базе данных',
+            data: updatedRequest
+          });
+        } else {
+          // Создаем новую заявку, если её нет
+          const newRequest = new SupportRequest({
+            context: applicationData.context || {
+              ...applicationData,
+              id_portal: idPortal
+            },
+            currentStatus: newStatus || 'Новая',
+            sentAt: new Date()
+          });
+
+          const savedRequest = await newRequest.save();
+          console.log('✅ Новая заявка создана в MongoDB:', {
+            id_portal: idPortal,
+            status: savedRequest.currentStatus
+          });
+
+          return res.json({ 
+            success: true,
+            message: 'Заявка успешно создана в базе данных',
+            data: savedRequest
+          });
+        }
+      } catch (dbError) {
+        console.error('❌ Ошибка при работе с MongoDB:', dbError);
+        return res.status(500).json({ 
+          success: false,
+          error: 'Ошибка при сохранении в базу данных',
+          details: dbError.message
+        });
+      }
+    } else {
+      console.warn('⚠️  MongoDB не подключена, данные не сохранены');
+      return res.status(503).json({ 
+        success: false,
+        error: 'MongoDB не подключена',
+        receivedData: applicationData
+      });
+    }
   } catch (error) {
-    console.error('Ошибка при обработке запроса:', error);
-    res.status(500).json({ error: error.message });
+    console.error('❌ Ошибка при обработке webhook от ELMA:', error);
+    return res.status(500).json({ 
+      success: false,
+      error: error.message 
+    });
   }
 });
-// Явная обработка OPTIONS для /check_status - гарантированная обработка preflight
-router.options('/check_status', (req, res) => {
-  console.log('🔍 OPTIONS запрос для /check_status обработан');
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, X-Forwarded-For');
-  res.header('Access-Control-Max-Age', '86400');
-  res.header('Access-Control-Allow-Credentials', 'false');
-  res.status(204).end();
-});
-
+// Endpoint для проверки статуса (legacy, больше не используется, но оставлен для обратной совместимости)
+// Теперь статусы сохраняются напрямую в MongoDB через /get_application
 router.post('/check_status', async (req, res) => {
   try {
-    // Устанавливаем CORS заголовки перед отправкой ответа (дополнительно к middleware)
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, X-Forwarded-For');
     
-    console.log('✅ POST /check_status - возвращаем', status_check_arr.length, 'элементов');
-    // Возвращаем массив данных
-    res.json(status_check_arr);
-    status_check_arr=[]
+    console.log('ℹ️  /check_status вызван (legacy endpoint, статусы теперь сохраняются напрямую в MongoDB)');
+    // Возвращаем пустой массив, так как буфер больше не используется
+    res.json([]);
   } catch (error) {
     console.error('❌ Ошибка при обработке запроса /check_status: ', error);
-    // Также добавляем CORS заголовки при ошибке
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, X-Forwarded-For');

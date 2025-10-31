@@ -22,8 +22,9 @@ const ServiceCard = ({ id, title, desc, category }) => {
   const [description, setDescription] = useState('');   // ← текст в поле "Описание"
   const [isSending, setIsSending] = useState(false);   // ← состояние загрузки
   // --- Новые состояния для отображения результата ---
-  const [sendResult, setSendResult] = useState(null); // 'success' | 'error' | null
-  const [sendMessage, setSendMessage] = useState(''); // Текст сообщения
+  const [sendResult, setSendResult] = useState(null); // 'success' | 'error' | 'db_warning' | null
+  const [sendMessage, setSendMessage] = useState(''); // Текст основного сообщения
+  const [dbWarningMessage, setDbWarningMessage] = useState(''); // Текст предупреждения о БД
 
   // Обработчики модалки "Подробнее"
   const handleOpenDetail = () => setOpenDetail(true);
@@ -151,6 +152,7 @@ const ServiceCard = ({ id, title, desc, category }) => {
     setIsSending(true);
     setSendResult(null); // Сброс результата перед новой отправкой
     setSendMessage('');  // Сброс сообщения
+    setDbWarningMessage(''); // Сброс предупреждения
 
     try {
       // --- Генерируем UUID и ticketNumber ---
@@ -170,7 +172,7 @@ const ServiceCard = ({ id, title, desc, category }) => {
 
       console.log('📤 Отправка заявки на сервер:', requestToSend);
 
-      // Отправляем на сервер
+      // --- 1. Отправляем на сервер ELMA ---
       const serverResponse = await fetch('/api/elma/post_application', {
         method: 'POST',
         headers: {
@@ -181,13 +183,72 @@ const ServiceCard = ({ id, title, desc, category }) => {
 
       if (!serverResponse.ok) {
         const errorText = await serverResponse.text();
-        throw new Error(`Ошибка сервера: ${serverResponse.status} ${serverResponse.statusText}. ${errorText}`);
+        throw new Error(`Ошибка сервера ELMA: ${serverResponse.status} ${serverResponse.statusText}. ${errorText}`);
       }
 
       const serverResult = await serverResponse.json();
-      console.log('✅ Заявка успешно отправлена на сервер:', serverResult);
+      console.log('✅ Заявка успешно отправлена на сервер ELMA:', serverResult);
 
-      // Только после успешного ответа — сохраняем в localStorage БЕЗ ответа сервера
+      // --- 2. Пытаемся сохранить в MongoDB ---
+      let dbSaveSuccess = true;
+      let dbErrorDetails = null;
+      const apiBaseUrl = ''; // Используем относительный путь
+
+      try {
+        console.log('💾 Сохранение заявки в БД:', {
+          url: `${apiBaseUrl}/api/requests/support`,
+          data: {
+            ...requestToSend,
+            sentAt: new Date().toISOString(),
+            currentStatus: 'Новая',
+          }
+        });
+
+        const saveToDbResponse = await fetch(`${apiBaseUrl}/api/requests/support`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ...requestToSend,
+            sentAt: new Date().toISOString(),
+            currentStatus: 'Новая',
+          }),
+        });
+
+        if (!saveToDbResponse.ok) {
+          let errorData;
+          try {
+            errorData = await saveToDbResponse.json();
+          } catch (e) {
+            errorData = { error: await saveToDbResponse.text() };
+          }
+
+          console.error('❌ Ошибка сохранения в БД:', {
+            status: saveToDbResponse.status,
+            statusText: saveToDbResponse.statusText,
+            error: errorData
+          });
+
+          dbSaveSuccess = false;
+          dbErrorDetails = {
+            status: saveToDbResponse.status,
+            statusText: saveToDbResponse.statusText,
+            error: errorData.error || 'Неизвестная ошибка'
+          };
+        } else {
+          const dbResult = await saveToDbResponse.json();
+          console.log('✅ Заявка сохранена в MongoDB:', dbResult);
+        }
+      } catch (dbError) {
+        console.error('❌ Исключение при сохранении в БД:', dbError);
+        dbSaveSuccess = false;
+        dbErrorDetails = {
+          error: dbError.message
+        };
+      }
+
+      // --- 3. Только после успешной отправки в ELMA — сохраняем в localStorage БЕЗ ответа сервера ---
       const existingApplications = JSON.parse(localStorage.getItem('applications') || '[]');
       existingApplications.push({
         ...requestToSend,
@@ -198,15 +259,25 @@ const ServiceCard = ({ id, title, desc, category }) => {
 
       console.log('💾 Заявка сохранена в localStorage (без ответа сервера)');
 
-      // --- Устанавливаем состояние успеха ---
-      setSendResult('success');
-      setSendMessage('Заявка успешно отправлена!');
+      // --- 4. Формируем сообщение и состояние ---
+      if (dbSaveSuccess) {
+        // Если успешно сохранили в БД
+        setSendResult('success');
+        setSendMessage(`Заявка ${newTicketNumber} успешно отправлена в ELMA и сохранена в базе данных.`);
+      } else {
+        // Если не удалось сохранить в БД
+        setSendResult('db_warning');
+        setSendMessage(`Заявка ${newTicketNumber} успешно отправлена в ELMA.`);
+        setDbWarningMessage(`⚠️ Внимание: Заявка не сохранена в базе данных.\nСтатус: ${dbErrorDetails.status} ${dbErrorDetails.statusText}\nОшибка: ${dbErrorDetails.error}`);
+      }
+
+      // Не закрываем модальное окно автоматически
 
     } catch (error) {
       console.error('❌ Ошибка при обработке заявки:', error);
       // --- Устанавливаем состояние ошибки ---
       setSendResult('error');
-      setSendMessage('Произошла ошибка при отправке заявки.');
+      setSendMessage(`Произошла ошибка при отправке заявки: ${error.message}`);
     } finally {
       setIsSending(false);
     }
@@ -219,6 +290,7 @@ const ServiceCard = ({ id, title, desc, category }) => {
     setIsSending(false);
     setSendResult(null); // Сброс результата
     setSendMessage('');  // Сброс сообщения
+    setDbWarningMessage(''); // Сброс предупреждения
   };
 
   const handleSubmit = () => {
@@ -353,7 +425,7 @@ const ServiceCard = ({ id, title, desc, category }) => {
             }}
           >
             {/* --- Условный рендеринг: сообщение или форма --- */}
-            {sendResult === 'success' || sendResult === 'error' ? (
+            {sendResult === 'success' || sendResult === 'error' || sendResult === 'db_warning' ? (
               // --- Отображение результата отправки ---
               <Box sx={{ textAlign: 'center', py: 2 }}>
                 {sendResult === 'success' ? (
@@ -365,23 +437,32 @@ const ServiceCard = ({ id, title, desc, category }) => {
                   </Box>
                 ) : (
                   <Box sx={{ color: 'error.main', mb: 2 }}>
-                    <ErrorOutlineIcon sx={{ fontSize: 60, mb: 1 }} />
+                    {sendResult === 'db_warning' ? (
+                      <ErrorOutlineIcon sx={{ fontSize: 60, mb: 1 }} />
+                    ) : (
+                      <ErrorOutlineIcon sx={{ fontSize: 60, mb: 1 }} />
+                    )}
                     <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                      Ошибка
+                      {sendResult === 'db_warning' ? 'Предупреждение' : 'Ошибка'}
                     </Typography>
                   </Box>
                 )}
                 <Typography variant="body1" sx={{ mb: 3 }}>
                   {sendMessage}
                 </Typography>
+                {sendResult === 'db_warning' && (
+                  <Typography variant="body2" color="warning.main" sx={{ mb: 3, whiteSpace: 'pre-line' }}>
+                    {dbWarningMessage}
+                  </Typography>
+                )}
                 <Button
                   variant="contained"
-                  onClick={sendResult === 'success' ? handleOkAfterSuccess : handleCloseCreate}
+                  onClick={handleOkAfterSuccess} // Всегда закрываем по OK
                   sx={{
                     color: 'white',
-                    backgroundColor: sendResult === 'success' ? 'success.main' : 'error.main',
+                    backgroundColor: sendResult === 'success' ? 'success.main' : (sendResult === 'db_warning' ? 'warning.main' : 'error.main'),
                     '&:hover': {
-                      backgroundColor: sendResult === 'success' ? 'success.dark' : 'error.dark',
+                      backgroundColor: sendResult === 'success' ? 'success.dark' : (sendResult === 'db_warning' ? 'warning.dark' : 'error.dark'),
                     },
                   }}
                 >

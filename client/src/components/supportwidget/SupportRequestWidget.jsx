@@ -241,8 +241,11 @@ const SupportRequestsWidget = () => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [requestDetails, setRequestDetails] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
- const [sendResult, setSendResult] = useState(null); // 'success' | 'error' | null
+  // --- Состояния для модального окна создания ---
+  const [sendResult, setSendResult] = useState(null); // 'success' | 'error' | 'db_warning' | null
   const [sendMessage, setSendMessage] = useState('');
+  const [dbWarningMessage, setDbWarningMessage] = useState('');
+
   // --- Обработчики меню ---
   const handleMenuClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -264,10 +267,13 @@ const SupportRequestsWidget = () => {
     setIsSending(false);
     setSendResult(null); // Сброс результата
     setSendMessage('');  // Сброс сообщения
+    setDbWarningMessage(''); // Сброс предупреждения
   };
- const handleOkAfterSuccess = () => {
+
+  const handleOkAfterSuccess = () => {
     handleCloseCreate(); // Закрываем и сбрасываем всё
   };
+
   // --- Обработчик клика по пункту меню (сервису) ---
   const handleServiceItemClick = (serviceId) => {
     console.log(`Выбран сервис: ${serviceId}`);
@@ -376,123 +382,40 @@ const SupportRequestsWidget = () => {
 
   // --- Обработчик кнопки "Отправить" в модальном окне ---
   const handleSend = async () => {
-  if (!description.trim()) {
-    // Вместо alert, покажем сообщение в модалке
-    setSendResult('error');
-    setSendMessage('Пожалуйста, введите описание.');
-    return;
-  }
-
-  setIsSending(true);
-  setSendResult(null); // Сброс результата перед новой отправкой
-  setSendMessage('');  // Сброс сообщения
-
-  try {
-    // --- 1. Генерируем уникальный ID для этой заявки ---
-    const requestId = generateSimpleUUID();
-
-    // --- 2. Формируем название заявки вида SD-XXXXXX ---
-    const ticketNumber = 'SD-' + requestId.split('-')[0].substring(0, 6).toUpperCase();
-
-    // --- 3. Создаём копию объекта и подставляем текущее описание, ID и __name ---
-    const requestToSend = {
-      ...defaultRequestContext,
-      context: {
-        ...defaultRequestContext.context,
-        __name: ticketNumber,        // ← Подставляем сформированное имя
-        application_text: description, // подставляем текст из поля "Описание"
-        id_portal: requestId,         // подставляем уникальный ID
-      },
-    };
-
-    console.log('📤 Отправка заявки на сервер:', requestToSend);
-
-    // --- 4. Отправляем на сервер ---
-    const serverResponse = await fetch('/api/elma/post_application', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestToSend),
-    });
-
-    if (!serverResponse.ok) {
-      const errorText = await serverResponse.text();
-      throw new Error(
-        `Ошибка сервера: ${serverResponse.status} ${serverResponse.statusText}. ${errorText}`
-      );
+    if (!description.trim()) {
+      // Вместо alert, покажем сообщение в модалке
+      setSendResult('error');
+      setSendMessage('Пожалуйста, введите описание.');
+      return;
     }
 
-    const serverResult = await serverResponse.json();
-    console.log('✅ Заявка успешно отправлена на сервер:', serverResult);
+    setIsSending(true);
+    setSendResult(null); // Сброс результата перед новой отправкой
+    setSendMessage('');  // Сброс сообщения
+    setDbWarningMessage(''); // Сброс предупреждения
 
-    // --- 5. Сохраняем в localStorage ---
-    const existingApplications = JSON.parse(localStorage.getItem('applications') || '[]');
-    existingApplications.push({
-      ...requestToSend,
-      sentAt: new Date().toISOString(), // Добавляем временную метку
-    });
-    localStorage.setItem('applications', JSON.stringify(existingApplications));
+    try {
+      // --- 1. Генерируем уникальный ID для этой заявки ---
+      const requestId = generateSimpleUUID();
 
-    console.log('💾 Заявка сохранена в localStorage');
+      // --- 2. Формируем название заявки вида SD-XXXXXX ---
+      const ticketNumber = 'SD-' + requestId.split('-')[0].substring(0, 6).toUpperCase();
 
-    // --- 6. Показываем успех ---
-    setSendResult('success');
-    setSendMessage(`Заявка ${ticketNumber} успешно отправлена!`);
-
-      // Сначала сохраняем в MongoDB через API
-      // Используем относительный путь, Vite proxy перенаправит на localhost:3000
-      const apiBaseUrl = '';
-      
-      console.log('💾 Сохранение заявки в БД:', {
-        url: `${apiBaseUrl}/api/requests/support`,
-        data: {
-          ...requestToSend,
-          sentAt: new Date().toISOString(),
-          currentStatus: 'Новая',
-        }
-      });
-      
-      const saveToDbResponse = await fetch(`${apiBaseUrl}/api/requests/support`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      // --- 3. Создаём копию объекта и подставляем текущее описание, ID и __name ---
+      const requestToSend = {
+        ...defaultRequestContext,
+        context: {
+          ...defaultRequestContext.context,
+          __name: ticketNumber,        // ← Подставляем сформированное имя
+          application_text: description, // подставляем текст из поля "Описание"
+          id_portal: requestId,         // подставляем уникальный ID
         },
-        body: JSON.stringify({
-          ...requestToSend,
-          sentAt: new Date().toISOString(),
-          currentStatus: 'Новая',
-        }),
-      });
+      };
 
-      if (!saveToDbResponse.ok) {
-        let errorData;
-        try {
-          errorData = await saveToDbResponse.json();
-        } catch (e) {
-          errorData = { error: await saveToDbResponse.text() };
-        }
-        
-        console.error('❌ Ошибка сохранения в БД:', {
-          status: saveToDbResponse.status,
-          statusText: saveToDbResponse.statusText,
-          error: errorData
-        });
-        
-        // Если MongoDB не подключена, показываем пользователю предупреждение
-        if (saveToDbResponse.status === 503) {
-          alert(`⚠️ Внимание: Заявка не сохранена в базе данных.\nПричина: ${errorData.error || 'MongoDB не подключена'}\n\nЗаявка будет отправлена в ELMA, но не будет сохранена локально.`);
-        } else {
-          // Для других ошибок также показываем предупреждение
-          alert(`⚠️ Внимание: Заявка не сохранена в базе данных.\nСтатус: ${saveToDbResponse.status}\nОшибка: ${errorData.error || 'Неизвестная ошибка'}`);
-        }
-      } else {
-        const dbResult = await saveToDbResponse.json();
-        console.log('✅ Заявка сохранена в MongoDB:', dbResult);
-      }
+      console.log('📤 Отправка заявки на сервер:', requestToSend);
 
-      // Отправляем в ELMA
-      const elmaResponse = await fetch(`${apiBaseUrl}/api/elma/post_application`, {
+      // --- 4. Отправляем в ELMA ---
+      const elmaResponse = await fetch('/api/elma/post_application', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -510,14 +433,87 @@ const SupportRequestsWidget = () => {
       const elmaResult = await elmaResponse.json();
       console.log('✅ Заявка успешно отправлена в ELMA:', elmaResult);
 
-      // Обновляем список заявок из API
+      // --- 5. Пытаемся сохранить в MongoDB ---
+      let dbSaveSuccess = true;
+      let dbErrorDetails = null;
+      const apiBaseUrl = '';
+
+      try {
+        console.log('💾 Сохранение заявки в БД:', {
+          url: `${apiBaseUrl}/api/requests/support`,
+          data: {
+            ...requestToSend,
+            sentAt: new Date().toISOString(),
+            currentStatus: 'Новая',
+          }
+        });
+
+        const saveToDbResponse = await fetch(`${apiBaseUrl}/api/requests/support`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ...requestToSend,
+            sentAt: new Date().toISOString(),
+            currentStatus: 'Новая',
+          }),
+        });
+
+        if (!saveToDbResponse.ok) {
+          let errorData;
+          try {
+            errorData = await saveToDbResponse.json();
+          } catch (e) {
+            errorData = { error: await saveToDbResponse.text() };
+          }
+
+          console.error('❌ Ошибка сохранения в БД:', {
+            status: saveToDbResponse.status,
+            statusText: saveToDbResponse.statusText,
+            error: errorData
+          });
+
+          dbSaveSuccess = false;
+          dbErrorDetails = {
+            status: saveToDbResponse.status,
+            statusText: saveToDbResponse.statusText,
+            error: errorData.error || 'Неизвестная ошибка'
+          };
+        } else {
+          const dbResult = await saveToDbResponse.json();
+          console.log('✅ Заявка сохранена в MongoDB:', dbResult);
+        }
+      } catch (dbError) {
+        console.error('❌ Исключение при сохранении в БД:', dbError);
+        dbSaveSuccess = false;
+        dbErrorDetails = {
+          error: dbError.message
+        };
+      }
+
+      // --- 6. Обновляем список заявок из API ---
       await loadRequestsFromAPI();
 
+      // --- 7. Формируем сообщение и состояние ---
+      if (dbSaveSuccess) {
+        // Если успешно сохранили в БД
+        setSendResult('success');
+        setSendMessage(`Заявка ${ticketNumber} успешно отправлена в ELMA и сохранена в базе данных.`);
+      } else {
+        // Если не удалось сохранить в БД
+        setSendResult('db_warning');
+        setSendMessage(`Заявка ${ticketNumber} успешно отправлена в ELMA.`);
+        setDbWarningMessage(`⚠️ Внимание: Заявка не сохранена в базе данных.\nСтатус: ${dbErrorDetails.status} ${dbErrorDetails.statusText}\nОшибка: ${dbErrorDetails.error}`);
+      }
+
       // Закрываем модальное окно и сбрасываем состояние
-      handleCloseCreate();
+      // handleCloseCreate(); // Не закрываем автоматически при предупреждении
     } catch (error) {
       console.error('❌ Ошибка при обработке заявки:', error);
-      alert('Не удалось обработать заявку: ' + error.message);
+      // --- Устанавливаем состояние ошибки ---
+      setSendResult('error');
+      setSendMessage(`Не удалось отправить заявку: ${error.message}`);
     } finally {
       setIsSending(false);
     }
@@ -619,77 +615,21 @@ const SupportRequestsWidget = () => {
     }
   };
 
-  // --- Функция для проверки обновлений статуса из ELMA ---
-  const fetchStatusUpdates = async () => {
-    try {
-      console.log('🔁 Запрос обновлений статуса у сервера...');
-      // Используем относительный путь, Vite proxy перенаправит на localhost:3000
-      const apiBaseUrl = '';
-      const response = await fetch(`${apiBaseUrl}/api/elma/check_status`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        console.warn(`⚠️ Ошибка при запросе статуса: ${response.status} ${response.statusText}`);
-        return;
-      }
-
-      const statusUpdatesArray = await response.json();
-      console.log('📥 Получены обновления статуса от сервера:', statusUpdatesArray);
-
-      if (Array.isArray(statusUpdatesArray) && statusUpdatesArray.length > 0) {
-        // Обновляем статусы в MongoDB через API
-        for (const update of statusUpdatesArray) {
-          const { id: serverId, status: newStatus } = update;
-
-          if (serverId && newStatus !== undefined) {
-            try {
-              // Используем относительный путь, Vite proxy перенаправит на localhost:3000
-              const apiBaseUrl = '';
-              await fetch(`${apiBaseUrl}/api/requests/support/${serverId}/status`, {
-                method: 'PATCH',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ currentStatus: newStatus }),
-              });
-              console.log(`🔄 Статус заявки ${serverId} обновлен в БД: ${newStatus}`);
-            } catch (error) {
-              console.error(`❌ Ошибка при обновлении статуса в БД для ${serverId}:`, error);
-            }
-          }
-        }
-
-        // Перезагружаем заявки из API
-        await loadRequestsFromAPI();
-      } else {
-        console.log(
-          'ℹ️ Сервер вернул пустой массив или не массив. Нет обновлений статуса.'
-        );
-      }
-    } catch (error) {
-      console.error('❌ Ошибка при получении/обработке обновлений статуса через поллинг:', error);
-    }
-  };
-
-  // --- Эффект для загрузки заявок из API и поллинга ---
+  // --- Эффект для загрузки заявок из API и периодического обновления ---
   useEffect(() => {
     let loadTimerId;
-    let pollIntervalId;
+    let refreshIntervalId;
 
     loadTimerId = setTimeout(async () => {
       await loadRequestsFromAPI();
       setLoading(false);
       console.log('🏁 Первоначальная загрузка завершена.');
 
-      console.log('📡 Запуск поллинга статуса (/api/elma/check_status) каждые 10 секунд...');
-      fetchStatusUpdates();
-      pollIntervalId = setInterval(() => {
-        console.log('🔁 Выполнение периодического запроса статуса...');
-        fetchStatusUpdates();
+      // Периодически обновляем список заявок (статусы теперь сохраняются напрямую в MongoDB через webhook от ELMA)
+      console.log('📡 Запуск периодического обновления списка заявок каждые 10 секунд...');
+      refreshIntervalId = setInterval(async () => {
+        console.log('🔁 Выполнение периодического обновления списка заявок...');
+        await loadRequestsFromAPI();
       }, 10000); // Каждые 10 секунд
     }, 500); // Небольшая задержка для имитации загрузки
 
@@ -699,9 +639,9 @@ const SupportRequestsWidget = () => {
         clearTimeout(loadTimerId);
         console.log('⏱️ Таймер загрузки очищен.');
       }
-      if (pollIntervalId) {
-        clearInterval(pollIntervalId);
-        console.log('⏰ Интервал поллинга остановлен.');
+      if (refreshIntervalId) {
+        clearInterval(refreshIntervalId);
+        console.log('⏰ Интервал обновления остановлен.');
       }
     };
   }, []); // Пустой массив зависимостей - эффект выполняется только при монтировании
@@ -831,7 +771,7 @@ const SupportRequestsWidget = () => {
           }}
         >
           {/* --- Условный рендеринг: сообщение или форма --- */}
-          {sendResult === 'success' || sendResult === 'error' ? (
+          {sendResult === 'success' || sendResult === 'error' || sendResult === 'db_warning' ? (
             // --- Отображение результата отправки ---
             <Box sx={{ textAlign: 'center', py: 2 }}>
               {sendResult === 'success' ? (
@@ -843,23 +783,32 @@ const SupportRequestsWidget = () => {
                 </Box>
               ) : (
                 <Box sx={{ color: 'error.main', mb: 2 }}>
-                  <ErrorOutlineIcon sx={{ fontSize: 60, mb: 1 }} />
+                  {sendResult === 'db_warning' ? (
+                    <ErrorOutlineIcon sx={{ fontSize: 60, mb: 1 }} />
+                  ) : (
+                    <ErrorOutlineIcon sx={{ fontSize: 60, mb: 1 }} />
+                  )}
                   <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    Ошибка
+                    {sendResult === 'db_warning' ? 'Предупреждение' : 'Ошибка'}
                   </Typography>
                 </Box>
               )}
               <Typography variant="body1" sx={{ mb: 3 }}>
                 {sendMessage}
               </Typography>
+              {sendResult === 'db_warning' && (
+                <Typography variant="body2" color="warning.main" sx={{ mb: 3, whiteSpace: 'pre-line' }}>
+                  {dbWarningMessage}
+                </Typography>
+              )}
               <Button
                 variant="contained"
-                onClick={sendResult === 'success' ? handleOkAfterSuccess : handleCloseCreate}
+                onClick={handleOkAfterSuccess} // Всегда закрываем по OK
                 sx={{
                   color: 'white',
-                  backgroundColor: sendResult === 'success' ? 'success.main' : 'error.main',
+                  backgroundColor: sendResult === 'success' ? 'success.main' : (sendResult === 'db_warning' ? 'warning.main' : 'error.main'),
                   '&:hover': {
-                    backgroundColor: sendResult === 'success' ? 'success.dark' : 'error.dark',
+                    backgroundColor: sendResult === 'success' ? 'success.dark' : (sendResult === 'db_warning' ? 'warning.dark' : 'error.dark'),
                   },
                 }}
               >
