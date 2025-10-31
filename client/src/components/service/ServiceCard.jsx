@@ -14,6 +14,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { AttachFile as AttachFileIcon } from '@mui/icons-material';
 
+
 const ServiceCard = ({ id, title, desc, category }) => {
   const [openDetail, setOpenDetail] = useState(false); // ← модалка "Подробнее"
   const [openCreate, setOpenCreate] = useState(false); // ← модалка "Создать" (только для admin)
@@ -23,7 +24,17 @@ const ServiceCard = ({ id, title, desc, category }) => {
   // Обработчики модалки "Подробнее"
   const handleOpenDetail = () => setOpenDetail(true);
   const handleCloseDetail = () => setOpenDetail(false);
-
+  function generateUUIDv4() {
+  // Возвращаем сразу отформатированную строку, генерируя части динамически
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    // Генерируем случайное число от 0 до 15
+    const r = Math.random() * 16 | 0;
+    // Для 'y' маскируем биты, чтобы получить 8, 9, A или B
+    const v = c == 'x' ? r : (r & 0x3 | 0x8);
+    // Преобразуем в шестнадцатеричную строку
+    return v.toString(16);
+  });
+}
   const defaultRequestContext = {
   "context": {
     "application_type": [
@@ -92,7 +103,7 @@ const ServiceCard = ({ id, title, desc, category }) => {
     "sla_level": [
       "019a2fac-abcd-70b8-9c8f-40cfedc70ea0"
     ],
-  "id_portal": "1cfetgrthrthrthrt3242",
+  "id_portal": generateUUIDv4(),
     "aplicant": [
       "019a2f92-8bf9-737b-96e8-b218caca58c6"
     ],
@@ -105,7 +116,6 @@ const ServiceCard = ({ id, title, desc, category }) => {
     ]
   }
 }
-
   // Обработчики модалки "Создать" (только для admin)
   const handleOpenCreate = () => {
     if (id === 'admin') {
@@ -115,7 +125,7 @@ const ServiceCard = ({ id, title, desc, category }) => {
     }
   };
 
-  const handleSend = async () => {
+ const handleSend = async () => {
   setIsSending(true);
 
   try {
@@ -128,7 +138,8 @@ const ServiceCard = ({ id, title, desc, category }) => {
       }
     };
 
-    const response = await fetch('http://localhost:3000/api/elma/post_application', {
+    // Отправляем на сервер
+    const serverResponse = await fetch('http://localhost:3000/api/elma/post_application', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -136,18 +147,29 @@ const ServiceCard = ({ id, title, desc, category }) => {
       body: JSON.stringify(requestToSend),
     });
 
-    if (!response.ok) {
-      throw new Error(`Ошибка: ${response.status} ${response.statusText}`);
+    if (!serverResponse.ok) {
+      throw new Error(`Ошибка сервера: ${serverResponse.status} ${serverResponse.statusText}`);
     }
 
-    const result = await response.json();
-    console.log('Заявка успешно отправлена в ELMA:', result);
+    const serverResult = await serverResponse.json();
+    console.log('✅ Заявка успешно отправлена на сервер:', serverResult);
+
+    // Только после успешного ответа — сохраняем в localStorage БЕЗ ответа сервера
+    const existingApplications = JSON.parse(localStorage.getItem('applications') || '[]');
+    existingApplications.push({
+      ...requestToSend,
+      sentAt: new Date().toISOString(), // Добавляем временную метку
+      // serverResponse: serverResult, // <- Убираем это
+    });
+    localStorage.setItem('applications', JSON.stringify(existingApplications));
+
+    console.log('💾 Заявка сохранена в localStorage (без ответа сервера)');
 
     // Закрываем модальное окно и сбрасываем состояние
     handleCloseCreate();
   } catch (error) {
-    console.error('Ошибка при отправке заявки:', error);
-    alert('Не удалось отправить заявку: ' + error.message);
+    console.error('❌ Ошибка при обработке заявки:', error);
+    alert('Не удалось обработать заявку: ' + error.message);
   } finally {
     setIsSending(false);
   }

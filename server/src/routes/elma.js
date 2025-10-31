@@ -5,13 +5,36 @@ const router = express.Router();
 // ELMA365 API configuration
 const ELMA_API_URL = process.env.ELMA_API_URL;
 const ELMA_TOKEN = process.env.ELMA_TOKEN;
+let status_check_arr=[]
+router.post('/get_application', async (req, res) => {
+  try {
+    // req.body — это defaultRequestContext, который пришёл с фронта
+    const applicationData = req.body;
+    status_check_arr.push(applicationData)
+    console.log('длина массива',status_check_arr.length)
+    console.log('Получен запрос на обновление заявки:', applicationData);
 
-
+    res.json({ message: 'Заявка успешно получена', receivedData: applicationData });
+  } catch (error) {
+    console.error('Ошибка при обработке запроса:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+router.post('/check_status', async (req, res) => {
+  try {
+    // Возвращаем массив данных
+    res.json(status_check_arr);
+    status_check_arr=[]
+  } catch (error) {
+    console.error('Ошибка при обработке запроса: ', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 router.post('/post_application', async (req, res) => {
   try {
     // req.body — это defaultRequestContext, который пришёл с фронта
     const applicationData = req.body;
-
+    console.log(applicationData)
     const response = await fetch('https://og4d3xrizqpay.elma365.ru/pub/v1/app/service_desk/applications/create', {
       method: 'POST',
       headers: {

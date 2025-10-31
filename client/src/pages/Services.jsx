@@ -26,17 +26,7 @@ const Services = () => {
   });
   const [activeId, setActiveId] = useState(null);
   const [openModal, setOpenModal] = useState(false);
-const [description, setDescription] = useState('');
-useEffect(() => {
-  const handleOpenModal = () => {
-    setOpenModal(true);
-  };
 
-  window.addEventListener('openAdminModal', handleOpenModal);
-  return () => {
-    window.removeEventListener('openAdminModal', handleOpenModal);
-  };
-}, []);
   // Сохранение в localStorage при изменении
   useEffect(() => {
     localStorage.setItem('serviceOrder', JSON.stringify(categories));
