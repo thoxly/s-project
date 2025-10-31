@@ -24,7 +24,9 @@ import {
   Build as BuildIcon,
   AttachFile as AttachFileIcon,
 } from '@mui/icons-material';
-
+// Добавьте в список импортов из '@mui/material'
+import {  CheckCircle as CheckCircleIcon, ErrorOutline as ErrorOutlineIcon } from '@mui/icons-material';
+import {CircularProgress} from '@mui/material';
 // --- Вспомогательная функция для генерации UUID ---
 function generateSimpleUUID() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -113,6 +115,7 @@ const servicesData = {
 // ВАЖНО: Замените этот объект на ваш реальный шаблон заявки
 const defaultRequestContext = {
   context: {
+    __name:'',
     application_type: [
       {
         code: 'zno',
@@ -157,6 +160,9 @@ const defaultRequestContext = {
         email: 'mail@example.com',
       },
     ],
+    "current_support_level": [
+        "019a2f5f-9117-770d-ba20-73d528ca2155"
+      ],
     table_of_sla_indicators: {
       rows: [
         {
@@ -210,6 +216,8 @@ const SupportRequestsWidget = () => {
   const [description, setDescription] = useState('');
   const [isSending, setIsSending] = useState(false);
 
+    const [sendResult, setSendResult] = useState(null); // 'success' | 'error' | null
+  const [sendMessage, setSendMessage] = useState(''); // Текст сообщения
   // --- Обработчики меню ---
   const handleMenuClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -227,9 +235,14 @@ const SupportRequestsWidget = () => {
 
   const handleCloseCreate = () => {
     setOpenCreate(false);
-    setDescription(''); // Сбрасываем описание при закрытии
+    setDescription('');
+    setIsSending(false);
+    setSendResult(null); // Сброс результата
+    setSendMessage('');  // Сброс сообщения
   };
-
+ const handleOkAfterSuccess = () => {
+    handleCloseCreate(); // Закрываем и сбрасываем всё
+  };
   // --- Обработчик клика по пункту меню (сервису) ---
   const handleServiceItemClick = (serviceId) => {
     console.log(`Выбран сервис: ${serviceId}`);
@@ -253,70 +266,79 @@ const SupportRequestsWidget = () => {
 
   // --- Обработчик кнопки "Отправить" в модальном окне ---
   const handleSend = async () => {
-    if (!description.trim()) {
-      alert('Пожалуйста, введите описание.');
-      return;
+  if (!description.trim()) {
+    // Вместо alert, покажем сообщение в модалке
+    setSendResult('error');
+    setSendMessage('Пожалуйста, введите описание.');
+    return;
+  }
+
+  setIsSending(true);
+  setSendResult(null); // Сброс результата перед новой отправкой
+  setSendMessage('');  // Сброс сообщения
+
+  try {
+    // --- 1. Генерируем уникальный ID для этой заявки ---
+    const requestId = generateSimpleUUID();
+
+    // --- 2. Формируем название заявки вида SD-XXXXXX ---
+    const ticketNumber = 'SD-' + requestId.split('-')[0].substring(0, 6).toUpperCase();
+
+    // --- 3. Создаём копию объекта и подставляем текущее описание, ID и __name ---
+    const requestToSend = {
+      ...defaultRequestContext,
+      context: {
+        ...defaultRequestContext.context,
+        __name: ticketNumber,        // ← Подставляем сформированное имя
+        application_text: description, // подставляем текст из поля "Описание"
+        id_portal: requestId,         // подставляем уникальный ID
+      },
+    };
+
+    console.log('📤 Отправка заявки на сервер:', requestToSend);
+
+    // --- 4. Отправляем на сервер ---
+    const serverResponse = await fetch('/api/elma/post_application', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestToSend),
+    });
+
+    if (!serverResponse.ok) {
+      const errorText = await serverResponse.text();
+      throw new Error(
+        `Ошибка сервера: ${serverResponse.status} ${serverResponse.statusText}. ${errorText}`
+      );
     }
 
-    setIsSending(true);
+    const serverResult = await serverResponse.json();
+    console.log('✅ Заявка успешно отправлена на сервер:', serverResult);
 
-    try {
-      // Генерируем уникальный ID для этой заявки
-      const requestId = generateSimpleUUID();
+    // --- 5. Сохраняем в localStorage ---
+    const existingApplications = JSON.parse(localStorage.getItem('applications') || '[]');
+    existingApplications.push({
+      ...requestToSend,
+      sentAt: new Date().toISOString(), // Добавляем временную метку
+    });
+    localStorage.setItem('applications', JSON.stringify(existingApplications));
 
-      // Создаём копию объекта и подставляем текущее описание и ID
-      const requestToSend = {
-        ...defaultRequestContext,
-        context: {
-          ...defaultRequestContext.context,
-          application_text: description, // подставляем текст из поля "Описание"
-          id_portal: requestId, // подставляем уникальный ID
-        },
-      };
+    console.log('💾 Заявка сохранена в localStorage');
 
-      console.log('📤 Отправка заявки на сервер:', requestToSend);
+    // --- 6. Показываем успех ---
+    setSendResult('success');
+    setSendMessage(`Заявка ${ticketNumber} успешно отправлена!`);
 
-      // Отправляем на сервер
-      // ВАЖНО: Используйте правильный URL. Если у вас настроен proxy, используйте его.
-      // Например: '/api/elma/post_application'
-      const serverResponse = await fetch('https://api-surius.ru.tuna.am/api/elma/post_application', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestToSend),
-      });
-
-      if (!serverResponse.ok) {
-        const errorText = await serverResponse.text();
-        throw new Error(
-          `Ошибка сервера: ${serverResponse.status} ${serverResponse.statusText}. ${errorText}`
-        );
-      }
-
-      const serverResult = await serverResponse.json();
-      console.log('✅ Заявка успешно отправлена на сервер:', serverResult);
-
-      // Только после успешного ответа — сохраняем в localStorage
-      const existingApplications = JSON.parse(localStorage.getItem('applications') || '[]');
-      existingApplications.push({
-        ...requestToSend,
-        sentAt: new Date().toISOString(), // Добавляем временную метку
-        // serverResponse: serverResult, // Опционально: сохранить ответ сервера
-      });
-      localStorage.setItem('applications', JSON.stringify(existingApplications));
-
-      console.log('💾 Заявка сохранена в localStorage');
-
-      // Закрываем модальное окно и сбрасываем состояние
-      handleCloseCreate();
-    } catch (error) {
-      console.error('❌ Ошибка при обработке заявки:', error);
-      alert('Не удалось обработать заявку: ' + error.message);
-    } finally {
-      setIsSending(false);
-    }
-  };
+  } catch (error) {
+    console.error('❌ Ошибка при обработке заявки:', error);
+    // --- Показываем ошибку ---
+    setSendResult('error');
+    setSendMessage('Произошла ошибка при отправке заявки.');
+  } finally {
+    setIsSending(false);
+  }
+};
 
   // --- Эффект для загрузки заявок из localStorage и поллинга ---
   useEffect(() => {
@@ -428,7 +450,6 @@ const SupportRequestsWidget = () => {
             id: appId,
             ticketNumber: 'SD-' + appId.split('-')[0].substring(0, 6).toUpperCase(),
             createdAt: storageItem.sentAt || new Date().toISOString(),
-            initiator: 'Демо-пользователь',
             type: 'Администрирование ИС/ОС | Права доступа',
             description: context.application_text || 'Описание отсутствует',
             status: initialStatus,
@@ -484,7 +505,7 @@ const SupportRequestsWidget = () => {
   return (
     <Box>
       {/* Кнопка "+ Заявка" отображается только если список пуст */}
-      {requests.length === 0 && (
+      
         <Box sx={{ display: 'flex', justifyContent: 'flex-start', mb: 2 }}>
           <div>
             <Button
@@ -573,17 +594,17 @@ const SupportRequestsWidget = () => {
             </Menu>
           </div>
         </Box>
-      )}
 
-      {/* --- Модальное окно для создания заявки "admin" --- */}
       <Modal open={openCreate} onClose={handleCloseCreate}>
         <Box
           sx={{
+            // --- Стили позиционирования и размера ---
             position: 'absolute',
             top: '50%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
             width: { xs: '90%', sm: 400 }, // Адаптивная ширина
+            // --- Стили оформления ---
             bgcolor: 'background.paper',
             borderRadius: 2,
             boxShadow: 24,
@@ -592,72 +613,119 @@ const SupportRequestsWidget = () => {
             overflowY: 'auto', // Скролл внутри модального окна
           }}
         >
-          <Typography sx={{ padding: '0 0 8px 0' }} variant="h6" fontWeight={600} gutterBottom>
-            Администрирование ИС/ОС | Права доступа
-          </Typography>
-          <TextField
-            label="Описание"
-            multiline
-            rows={4}
-            fullWidth
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            sx={{ mb: 2 }}
-          />
-          <Divider sx={{ my: 2 }} />
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-start',
-              gap: 1,
-            }}
-          >
-            <Tooltip title="Недоступно в демо-версии" arrow>
-              <Button
-                variant="outlined"
-                startIcon={<AttachFileIcon />}
-                onClick={handleSubmit}
-                sx={{
-                  color: 'text.primary',
-                  borderColor: 'grey.400',
-                  '&:hover': {
-                    backgroundColor: 'grey.50',
-                    borderColor: 'grey.500',
-                  },
-                }}
-              >
-                Прикрепить
-              </Button>
-            </Tooltip>
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'flex-end',
-                gap: 1,
-                width: '100%',
-                mt: 1, // Отступ сверху
-              }}
-            >
-              <Button onClick={handleCloseCreate} disabled={isSending}>
-                Отмена
-              </Button>
+          {/* --- Условный рендеринг: сообщение или форма --- */}
+          {sendResult === 'success' || sendResult === 'error' ? (
+            // --- Отображение результата отправки ---
+            <Box sx={{ textAlign: 'center', py: 2 }}>
+              {sendResult === 'success' ? (
+                <Box sx={{ color: 'success.main', mb: 2 }}>
+                  <CheckCircleIcon sx={{ fontSize: 60, mb: 1 }} />
+                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                    Успешно!
+                  </Typography>
+                </Box>
+              ) : (
+                <Box sx={{ color: 'error.main', mb: 2 }}>
+                  <ErrorOutlineIcon sx={{ fontSize: 60, mb: 1 }} />
+                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                    Ошибка
+                  </Typography>
+                </Box>
+              )}
+              <Typography variant="body1" sx={{ mb: 3 }}>
+                {sendMessage}
+              </Typography>
               <Button
                 variant="contained"
-                onClick={handleSend}
-                disabled={isSending || !description.trim()} // Отключаем, если пусто или отправляется
+                onClick={sendResult === 'success' ? handleOkAfterSuccess : handleCloseCreate}
                 sx={{
                   color: 'white',
-                  backgroundColor: 'primary.main',
+                  backgroundColor: sendResult === 'success' ? 'success.main' : 'error.main',
                   '&:hover': {
-                    backgroundColor: 'primary.dark',
+                    backgroundColor: sendResult === 'success' ? 'success.dark' : 'error.dark',
                   },
                 }}
               >
-                {isSending ? 'Отправка...' : 'Отправить'}
+                OK
               </Button>
             </Box>
-          </Box>
+          ) : isSending ? (
+            // --- Отображение спиннера во время отправки ---
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 4 }}>
+              <CircularProgress size={40} sx={{ mb: 2 }} />
+              <Typography variant="body1">Отправка заявки...</Typography>
+            </Box>
+          ) : (
+            // --- Отображение формы ввода ---
+            <>
+              <Typography sx={{ padding: '0 0 8px 0' }} variant="h6" fontWeight={600} gutterBottom>
+                Администрирование ИС/ОС | Права доступа
+              </Typography>
+              <TextField
+                label="Описание"
+                multiline
+                rows={4}
+                fullWidth
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                sx={{ mb: 2 }}
+              />
+              <Divider sx={{ my: 2 }} />
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'flex-start',
+                  gap: 1,
+                }}
+              >
+                <Tooltip title="Недоступно в демо-версии" arrow>
+                  <Button
+                    variant="outlined"
+                    startIcon={<AttachFileIcon />}
+                    onClick={handleSubmit}
+                    sx={{
+                      color: 'text.primary',
+                      borderColor: 'grey.400',
+                      '&:hover': {
+                        backgroundColor: 'grey.50',
+                        borderColor: 'grey.500',
+                      },
+                    }}
+                  >
+                    Прикрепить
+                  </Button>
+                </Tooltip>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                    gap: 1,
+                    width: '100%',
+                    mt: 1,
+                  }}
+                >
+                  <Button onClick={handleCloseCreate} disabled={isSending}>
+                    Отмена
+                  </Button>
+                  <Button
+                    variant="contained"
+                    onClick={handleSend}
+                    disabled={isSending || !description.trim()}
+                    sx={{
+                      color: 'white',
+                      backgroundColor: 'primary.main',
+                      '&:hover': {
+                        backgroundColor: 'primary.dark',
+                      },
+                    }}
+                  >
+                    Отправить
+                  </Button>
+                </Box>
+              </Box>
+            </>
+          )}
         </Box>
       </Modal>
 
