@@ -139,7 +139,8 @@ const ServiceCard = ({ id, title, desc, category }) => {
     };
 
     // Сначала сохраняем в MongoDB через API
-    const apiBaseUrl = 'https://sb24xv-194-0-112-167.ru.tuna.am';
+    // Используем относительный путь, Vite proxy перенаправит на localhost:3000
+    const apiBaseUrl = '';
     const saveToDbResponse = await fetch(`${apiBaseUrl}/api/requests/support`, {
       method: 'POST',
       headers: {
