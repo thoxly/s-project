@@ -103,12 +103,12 @@ const theme = createTheme({
     },
     body1: {
       fontSize: '1rem',
-      lineHeight: 1.6,
+      lineHeight: 1.3,
       fontWeight: 400,
     },
     body2: {
       fontSize: '0.875rem',
-      lineHeight: 1.6,
+      lineHeight: 1.3,
       fontWeight: 400,
     },
     button: {

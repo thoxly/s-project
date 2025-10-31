@@ -56,7 +56,6 @@ const EventCard = ({ event }) => {
     <Card
       sx={{
         minWidth: { xs: 260, sm: 280 },
-        maxWidth: { xs: 300, sm: 320 },
         borderRadius: 3,
         boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06)",
         "&:hover": {
@@ -64,6 +63,7 @@ const EventCard = ({ event }) => {
           transform: "translateY(-2px)",
         },
         transition: "all 0.2s ease-in-out",
+        width:'100%',
         height: '100%',
         display: 'flex',
         flexDirection: 'column'
