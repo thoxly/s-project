@@ -1000,6 +1000,34 @@ const SupportRequestsWidget = () => {
                 </Paper>
               </Box>
 
+              {/* Решение заявки - отображается только если solution_description существует */}
+              {requestDetails.context?.solution_description && (
+                <>
+                  <Divider sx={{ my: 2 }} />
+                  <Box sx={{ mb: 3 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <CheckCircleIcon sx={{ mr: 1, fontSize: 20, color: 'success.main' }} />
+                      <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                        Решение
+                      </Typography>
+                    </Box>
+                    <Paper
+                      variant="outlined"
+                      sx={{
+                        p: 2,
+                        backgroundColor: 'success.50',
+                        borderRadius: 1,
+                        borderColor: 'success.light',
+                      }}
+                    >
+                      <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+                        {requestDetails.context.solution_description}
+                      </Typography>
+                    </Paper>
+                  </Box>
+                </>
+              )}
+
               <Divider sx={{ my: 2 }} />
 
               {/* Информация о заявке */}

@@ -120,6 +120,10 @@ router.post('/get_application', async (req, res) => {
             // Если данные уже в context
             updateData.context = { ...existingRequest.context, ...applicationData.context };
             updateData.context.id_portal = idPortal;
+            // Обрабатываем solution_description: если не null, сохраняем
+            if (applicationData.context.solution_description !== null && applicationData.context.solution_description !== undefined) {
+              updateData.context.solution_description = applicationData.context.solution_description;
+            }
           } else {
             // Если данные пришли напрямую от ELMA, маппим их в context
             updateData.context = {
@@ -132,6 +136,10 @@ router.post('/get_application', async (req, res) => {
               ...(applicationData.assignee && { responsible: [applicationData.assignee] }),
               ...(applicationData.initiator && { aplicant: [applicationData.initiator] }),
             };
+            // Обрабатываем solution_description: если не null, сохраняем
+            if (applicationData.solution_description !== null && applicationData.solution_description !== undefined) {
+              updateData.context.solution_description = applicationData.solution_description;
+            }
           }
 
           const updatedRequest = await SupportRequest.findOneAndUpdate(
@@ -160,6 +168,13 @@ router.post('/get_application', async (req, res) => {
             ...(applicationData.assignee && { responsible: [applicationData.assignee] }),
             ...(applicationData.initiator && { aplicant: [applicationData.initiator] }),
           };
+          
+          // Обрабатываем solution_description: если не null, добавляем в context
+          if (applicationData.context?.solution_description !== null && applicationData.context?.solution_description !== undefined) {
+            contextData.solution_description = applicationData.context.solution_description;
+          } else if (applicationData.solution_description !== null && applicationData.solution_description !== undefined) {
+            contextData.solution_description = applicationData.solution_description;
+          }
           
           const newRequest = new SupportRequest({
             context: contextData,

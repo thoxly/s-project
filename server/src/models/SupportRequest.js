@@ -78,7 +78,11 @@ const supportRequestSchema = new mongoose.Schema({
       type: String,
       required: true
     },
-    contact_information_secondary: [contactInformationSchema] // второй массив contact_information из структуры
+    contact_information_secondary: [contactInformationSchema], // второй массив contact_information из структуры
+    solution_description: {
+      type: String,
+      default: null
+    }
   },
   
   // Дополнительные поля для управления

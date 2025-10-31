@@ -209,8 +209,16 @@ router.post('/support', async (req, res) => {
     }
     
     console.log('✨ Создание новой заявки...');
+    
+    // Подготовка context с обработкой solution_description
+    const contextData = { ...requestData.context };
+    // Если solution_description равен null, удаляем его из context
+    if (contextData.solution_description === null || contextData.solution_description === undefined) {
+      delete contextData.solution_description;
+    }
+    
     const newRequest = new SupportRequest({
-      context: requestData.context,
+      context: contextData,
       sentAt: requestData.sentAt ? new Date(requestData.sentAt) : new Date(),
       currentStatus: requestData.currentStatus || 'Новая',
       userId: requestData.userId || null
