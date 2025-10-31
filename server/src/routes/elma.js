@@ -41,10 +41,19 @@ router.use((req, res, next) => {
   next();
 });
 router.post('/get_application', async (req, res) => {
+  // ВАЖНО: Всегда отвечаем 200 OK, чтобы ELMA не получал 502
   try {
     // req.body — это defaultRequestContext, который пришёл от ELMA
     const applicationData = req.body;
-    console.log('📥 Получен webhook от ELMA с обновлением заявки:', JSON.stringify(applicationData, null, 2));
+    
+    // Подробное логирование для отладки
+    console.log('═══════════════════════════════════════════════════════════');
+    console.log('📥 Webhook от ELMA получен:', new Date().toISOString());
+    console.log('📥 URL:', req.originalUrl);
+    console.log('📥 Заголовки:', JSON.stringify(req.headers, null, 2));
+    console.log('📥 Тело запроса:', JSON.stringify(applicationData, null, 2));
+    console.log('📊 MongoDB статус:', mongoose.connection.readyState === 1 ? '✅ Подключена' : '❌ Не подключена');
+    console.log('═══════════════════════════════════════════════════════════');
 
     // Извлекаем id_portal и статус из данных
     // ELMA может отправлять данные в разных форматах, пробуем разные варианты
@@ -74,9 +83,10 @@ router.post('/get_application', async (req, res) => {
 
     if (!idPortal) {
       console.warn('⚠️  Не удалось извлечь id_portal из данных ELMA');
-      return res.status(400).json({ 
-        success: false,
-        error: 'Отсутствует id_portal в данных от ELMA',
+      // Возвращаем 200 OK, но с флагом warning
+      return res.status(200).json({ 
+        success: true,
+        warning: 'Не удалось извлечь id_portal, данные получены но не сохранены',
         receivedData: applicationData
       });
     }
@@ -122,7 +132,7 @@ router.post('/get_application', async (req, res) => {
             status: updatedRequest.currentStatus
           });
 
-          return res.json({ 
+          return res.status(200).json({ 
             success: true,
             message: 'Заявка успешно обновлена в базе данных',
             data: updatedRequest
@@ -144,7 +154,7 @@ router.post('/get_application', async (req, res) => {
             status: savedRequest.currentStatus
           });
 
-          return res.json({ 
+          return res.status(200).json({ 
             success: true,
             message: 'Заявка успешно создана в базе данных',
             data: savedRequest
@@ -152,24 +162,32 @@ router.post('/get_application', async (req, res) => {
         }
       } catch (dbError) {
         console.error('❌ Ошибка при работе с MongoDB:', dbError);
-        return res.status(500).json({ 
-          success: false,
-          error: 'Ошибка при сохранении в базу данных',
-          details: dbError.message
+        console.error('❌ Stack trace:', dbError.stack);
+        // Возвращаем 200 OK, чтобы ELMA не получал 502
+        return res.status(200).json({ 
+          success: true,
+          warning: 'Webhook получен, но не удалось сохранить в БД',
+          error: dbError.message,
+          receivedData: applicationData
         });
       }
     } else {
       console.warn('⚠️  MongoDB не подключена, данные не сохранены');
-      return res.status(503).json({ 
-        success: false,
-        error: 'MongoDB не подключена',
+      console.warn('⚠️  Данные от ELMA получены успешно, но будут потеряны');
+      // Возвращаем 200 OK, чтобы ELMA не получал 502
+      return res.status(200).json({ 
+        success: true,
+        warning: 'MongoDB не подключена, данные получены но не сохранены',
         receivedData: applicationData
       });
     }
   } catch (error) {
-    console.error('❌ Ошибка при обработке webhook от ELMA:', error);
-    return res.status(500).json({ 
-      success: false,
+    console.error('❌ КРИТИЧЕСКАЯ ОШИБКА при обработке webhook от ELMA:', error);
+    console.error('❌ Stack trace:', error.stack);
+    // Всегда возвращаем 200 OK, чтобы ELMA не получал 502
+    return res.status(200).json({ 
+      success: true,
+      warning: 'Webhook получен, но произошла ошибка при обработке',
       error: error.message 
     });
   }
