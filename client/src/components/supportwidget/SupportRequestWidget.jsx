@@ -305,6 +305,10 @@ const SupportRequestsWidget = () => {
     try {
       // Загружаем детали заявки из API
       const apiBaseUrl = '';
+      console.log('═══════════════════════════════════════════════════════════');
+      console.log('🔍 ФРОНТЕНД: Загрузка деталей заявки:', request.id);
+      console.log('═══════════════════════════════════════════════════════════');
+      
       const response = await fetch(`${apiBaseUrl}/api/requests/support/${request.id}`, {
         method: 'GET',
         headers: {
@@ -314,10 +318,27 @@ const SupportRequestsWidget = () => {
 
       if (response.ok) {
         const result = await response.json();
+        
+        console.log('📥 ФРОНТЕНД: Детали заявки получены:', {
+          success: result.success,
+          has_data: !!result.data,
+          id_portal: result.data?.context?.id_portal,
+          status: result.data?.currentStatus,
+          has_solution_description: !!result.data?.context?.solution_description,
+          solution_description: result.data?.context?.solution_description,
+          application_text_preview: result.data?.context?.application_text ? 
+            result.data.context.application_text.substring(0, 50) + '...' : 
+            'отсутствует',
+          context_keys: Object.keys(result.data?.context || {})
+        });
+        console.log('📋 Полные данные заявки:', result.data);
+        console.log('═══════════════════════════════════════════════════════════\n');
+        
         if (result.success && result.data) {
           setRequestDetails(result.data);
         } else {
           // Если API вернул успех, но без данных, используем данные из карточки
+          console.warn('⚠️ API вернул успех, но без данных. Используем данные из карточки.');
           setRequestDetails({
             context: {
               id_portal: request.id,
@@ -328,7 +349,7 @@ const SupportRequestsWidget = () => {
           });
         }
       } else {
-        console.error('Ошибка при загрузке деталей заявки:', response.status);
+        console.error('❌ Ошибка при загрузке деталей заявки:', response.status);
         // Если не удалось загрузить из API, используем данные из карточки
         setRequestDetails({
           context: {
@@ -340,7 +361,7 @@ const SupportRequestsWidget = () => {
         });
       }
     } catch (error) {
-      console.error('Ошибка при загрузке деталей заявки:', error);
+      console.error('❌ Ошибка при загрузке деталей заявки:', error);
       // Fallback на данные из карточки
       setRequestDetails({
         context: {
@@ -538,9 +559,30 @@ const SupportRequestsWidget = () => {
       }
 
       const result = await response.json();
-      console.log('📥 Заявки загружены из API:', result);
+      console.log('═══════════════════════════════════════════════════════════');
+      console.log('📥 ФРОНТЕНД: Заявки загружены из API:', result);
+      console.log('📊 Количество заявок:', result.data?.length || 0);
+      console.log('═══════════════════════════════════════════════════════════');
 
       if (result.success && Array.isArray(result.data)) {
+        // Детальное логирование каждой заявки
+        result.data.forEach((item, index) => {
+          console.log(`\n📋 Заявка #${index + 1}:`, {
+            _id: item._id,
+            id_portal: item.context?.id_portal,
+            status: item.currentStatus,
+            has_solution_description: !!item.context?.solution_description,
+            solution_description_preview: item.context?.solution_description ? 
+              item.context.solution_description.substring(0, 50) + '...' : 
+              'отсутствует',
+            application_text_preview: item.context?.application_text ? 
+              item.context.application_text.substring(0, 50) + '...' : 
+              'отсутствует',
+            full_context_keys: Object.keys(item.context || {})
+          });
+        });
+        console.log('═══════════════════════════════════════════════════════════\n');
+
         const formattedRequests = result.data.map((storageItem) => {
           const context = storageItem.context || {};
           const appId = context.id_portal || generateSimpleUUID();
@@ -558,7 +600,7 @@ const SupportRequestsWidget = () => {
         });
 
         setRequests(formattedRequests);
-        console.log(`📦 Установлено ${formattedRequests.length} заявок из API.`);
+        console.log(`✅ Установлено ${formattedRequests.length} заявок из API.`);
         return formattedRequests;
       } else {
         // Fallback на localStorage

@@ -82,15 +82,18 @@ router.post('/get_application', async (req, res) => {
     console.log('🔍 Извлеченные данные:', { 
       idPortal, 
       newStatus,
+      solution_description: applicationData.solution_description || applicationData.context?.solution_description,
       receivedFields: Object.keys(applicationData)
     });
 
-    if (!idPortal) {
-      console.warn('⚠️  Не удалось извлечь id_portal из данных ELMA');
-      // Возвращаем 200 OK, но с флагом warning
+    // ВАЖНО: Проверяем, что id_portal не "-" (это означает ошибку от ELMA)
+    if (!idPortal || idPortal === '-' || idPortal === 'undefined') {
+      console.error('❌ КРИТИЧЕСКАЯ ОШИБКА: Некорректный id_portal:', idPortal);
+      console.error('📋 Полные данные от ELMA:', JSON.stringify(applicationData, null, 2));
+      // Возвращаем 200 OK, чтобы ELMA не получал 502
       return res.status(200).json({ 
         success: true,
-        warning: 'Не удалось извлечь id_portal, данные получены но не сохранены',
+        warning: `Некорректный id_portal (${idPortal}), данные получены но не сохранены. Проверьте, что ELMA отправляет корректный id_portal.`,
         receivedData: applicationData
       });
     }
@@ -115,21 +118,25 @@ router.post('/get_application', async (req, res) => {
           }
 
           // Обновляем context с данными от ELMA
-          // ELMA отправляет: { id, status, description, type, date, initiator, assignee }
+          // ELMA отправляет: { id, status, description, type, date, initiator, assignee, solution_description }
           if (applicationData.context) {
-            // Если данные уже в context
+            // Если данные уже в context (редкий случай)
+            console.log('📦 ELMA прислала данные с полем context');
             updateData.context = { ...existingRequest.context, ...applicationData.context };
             updateData.context.id_portal = idPortal;
             // Обрабатываем solution_description: проверяем верхний уровень (приоритет) и context
             if (applicationData.solution_description !== null && applicationData.solution_description !== undefined) {
               // Приоритет верхнему уровню, если он есть
               updateData.context.solution_description = applicationData.solution_description;
+              console.log('💡 solution_description взят с верхнего уровня:', applicationData.solution_description);
             } else if (applicationData.context.solution_description !== null && applicationData.context.solution_description !== undefined) {
               // Если нет на верхнем уровне, берем из context
               updateData.context.solution_description = applicationData.context.solution_description;
+              console.log('💡 solution_description взят из context:', applicationData.context.solution_description);
             }
           } else {
-            // Если данные пришли напрямую от ELMA, маппим их в context
+            // Если данные пришли напрямую от ELMA (основной случай), маппим их в context
+            console.log('📦 ELMA прислала данные БЕЗ поля context (стандартный формат)');
             updateData.context = {
               ...existingRequest.context,
               id_portal: idPortal,
@@ -143,6 +150,9 @@ router.post('/get_application', async (req, res) => {
             // Обрабатываем solution_description: если не null, сохраняем
             if (applicationData.solution_description !== null && applicationData.solution_description !== undefined) {
               updateData.context.solution_description = applicationData.solution_description;
+              console.log('✅ solution_description сохранён в context:', applicationData.solution_description);
+            } else {
+              console.log('⚠️  solution_description отсутствует или null:', applicationData.solution_description);
             }
           }
 
@@ -153,8 +163,13 @@ router.post('/get_application', async (req, res) => {
           );
 
           console.log('✅ Заявка обновлена в MongoDB:', {
+            _id: updatedRequest._id,
             id_portal: idPortal,
-            status: updatedRequest.currentStatus
+            status: updatedRequest.currentStatus,
+            has_solution: !!updatedRequest.context?.solution_description,
+            solution_preview: updatedRequest.context?.solution_description ? 
+              updatedRequest.context.solution_description.substring(0, 50) + '...' : 
+              'отсутствует'
           });
 
           return res.status(200).json({ 
@@ -164,7 +179,8 @@ router.post('/get_application', async (req, res) => {
           });
         } else {
           // Создаем новую заявку, если её нет
-          // ELMA отправляет: { id, status, description, type, date, initiator, assignee }
+          console.log('🆕 Заявка с id_portal не найдена, создаём новую:', idPortal);
+          // ELMA отправляет: { id, status, description, type, date, initiator, assignee, solution_description }
           const contextData = applicationData.context || {
             id_portal: idPortal,
             application_text: applicationData.description || applicationData.application_text || '-',
@@ -177,10 +193,21 @@ router.post('/get_application', async (req, res) => {
           if (applicationData.solution_description !== null && applicationData.solution_description !== undefined) {
             // Приоритет верхнему уровню, если он есть
             contextData.solution_description = applicationData.solution_description;
+            console.log('✅ solution_description сохранён при создании заявки:', applicationData.solution_description);
           } else if (applicationData.context?.solution_description !== null && applicationData.context?.solution_description !== undefined) {
             // Если нет на верхнем уровне, берем из context
             contextData.solution_description = applicationData.context.solution_description;
+            console.log('✅ solution_description взят из context при создании:', applicationData.context.solution_description);
+          } else {
+            console.log('⚠️  solution_description отсутствует при создании заявки');
           }
+          
+          console.log('📋 Данные для создания заявки:', {
+            id_portal: contextData.id_portal,
+            application_text: contextData.application_text,
+            solution_description: contextData.solution_description,
+            status: newStatus || 'Новая'
+          });
           
           const newRequest = new SupportRequest({
             context: contextData,
@@ -190,8 +217,10 @@ router.post('/get_application', async (req, res) => {
 
           const savedRequest = await newRequest.save();
           console.log('✅ Новая заявка создана в MongoDB:', {
+            _id: savedRequest._id,
             id_portal: idPortal,
-            status: savedRequest.currentStatus
+            status: savedRequest.currentStatus,
+            has_solution: !!savedRequest.context?.solution_description
           });
 
           return res.status(200).json({ 
