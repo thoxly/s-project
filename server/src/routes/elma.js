@@ -22,6 +22,42 @@ const isMongoConnected = () => {
   return readyState === 1 && hasModel;
 };
 
+// Функция для получения solution_description из ELMA по id_elma_app
+const getSolutionFromElma = async (idElmaApp) => {
+  try {
+    console.log(`🔍 Запрашиваю solution_description из ELMA для id: ${idElmaApp}`);
+    
+    const response = await fetch(
+      `https://og4d3xrizqpay.elma365.ru/pub/v1/app/service_desk/applications/${idElmaApp}/get`,
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer 94803282-2c5f-44f1-a57f-d59552040232`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      console.error(`❌ Ошибка при запросе к ELMA: ${response.status} ${response.statusText}`);
+      return null;
+    }
+
+    const data = await response.json();
+    
+    if (data.success && data.item && data.item.solution_description) {
+      console.log(`✅ solution_description получен из ELMA: ${data.item.solution_description.substring(0, 50)}...`);
+      return data.item.solution_description;
+    } else {
+      console.warn(`⚠️  solution_description не найден в ответе ELMA`);
+      return null;
+    }
+  } catch (error) {
+    console.error(`❌ Ошибка при получении данных из ELMA:`, error);
+    return null;
+  }
+};
+
 // CORS middleware для этого роутера - МАКСИМАЛЬНО ЛИБЕРАЛЬНАЯ ПОЛИТИКА
 router.use((req, res, next) => {
   // Устанавливаем CORS заголовки для всех запросов
@@ -55,10 +91,11 @@ router.post('/get_application', async (req, res) => {
     console.log('📊 MongoDB статус:', mongoose.connection.readyState === 1 ? '✅ Подключена' : '❌ Не подключена');
     console.log('═══════════════════════════════════════════════════════════');
 
-    // Извлекаем id_portal и статус из данных
-    // ELMA отправляет: { id, status, description, type, date, initiator, assignee }
+    // Извлекаем id_portal, статус и id_elma_app из данных
+    // ELMA отправляет: { id, status, description, type, date, initiator, assignee, id_elma_app }
     let idPortal = null;
     let newStatus = null;
+    let idElmaApp = null;
 
     // Вариант 1: ELMA отправляет напрямую { id: "...", status: "..." }
     if (applicationData.id_portal || applicationData.id) {
@@ -79,9 +116,19 @@ router.post('/get_application', async (req, res) => {
       newStatus = applicationData.context.status;
     }
 
+    // Извлекаем id_elma_app (ELMA отправляет в поле "id_elma_app" или "__id")
+    if (applicationData.id_elma_app) {
+      idElmaApp = applicationData.id_elma_app;
+    } else if (applicationData.__id) {
+      idElmaApp = applicationData.__id;
+    } else if (applicationData.context && applicationData.context.id_elma_app) {
+      idElmaApp = applicationData.context.id_elma_app;
+    }
+
     console.log('🔍 Извлеченные данные:', { 
       idPortal, 
       newStatus,
+      idElmaApp,
       solution_description: applicationData.solution_description || applicationData.context?.solution_description,
       receivedFields: Object.keys(applicationData)
     });
@@ -117,15 +164,33 @@ router.post('/get_application', async (req, res) => {
             updateData.currentStatus = newStatus;
           }
 
+          // Если статус "Выполнена" или "Выполнено" и есть id_elma_app, запрашиваем solution_description из ELMA
+          let fetchedSolution = null;
+          if ((newStatus === 'Выполнена' || newStatus === 'Выполнено') && idElmaApp) {
+            console.log('🎯 Статус "Выполнена" и id_elma_app присутствует, запрашиваю solution_description из ELMA');
+            fetchedSolution = await getSolutionFromElma(idElmaApp);
+          }
+
           // Обновляем context с данными от ELMA
-          // ELMA отправляет: { id, status, description, type, date, initiator, assignee, solution_description }
+          // ELMA отправляет: { id, status, description, type, date, initiator, assignee, solution_description, id_elma_app }
           if (applicationData.context) {
             // Если данные уже в context (редкий случай)
             console.log('📦 ELMA прислала данные с полем context');
             updateData.context = { ...existingRequest.context, ...applicationData.context };
             updateData.context.id_portal = idPortal;
-            // Обрабатываем solution_description: проверяем верхний уровень (приоритет) и context
-            if (applicationData.solution_description !== null && applicationData.solution_description !== undefined) {
+            
+            // Сохраняем id_elma_app
+            if (idElmaApp) {
+              updateData.context.id_elma_app = idElmaApp;
+              console.log('💾 id_elma_app сохранён в context:', idElmaApp);
+            }
+            
+            // Обрабатываем solution_description: приоритет fetchedSolution, потом верхний уровень, потом context
+            if (fetchedSolution) {
+              // Самый высокий приоритет - данные, полученные из ELMA API
+              updateData.context.solution_description = fetchedSolution;
+              console.log('💡 solution_description взят из ELMA API:', fetchedSolution.substring(0, 50) + '...');
+            } else if (applicationData.solution_description !== null && applicationData.solution_description !== undefined) {
               // Приоритет верхнему уровню, если он есть
               updateData.context.solution_description = applicationData.solution_description;
               console.log('💡 solution_description взят с верхнего уровня:', applicationData.solution_description);
@@ -147,8 +212,19 @@ router.post('/get_application', async (req, res) => {
               ...(applicationData.assignee && { responsible: [applicationData.assignee] }),
               ...(applicationData.initiator && { aplicant: [applicationData.initiator] }),
             };
-            // Обрабатываем solution_description: если не null, сохраняем
-            if (applicationData.solution_description !== null && applicationData.solution_description !== undefined) {
+            
+            // Сохраняем id_elma_app
+            if (idElmaApp) {
+              updateData.context.id_elma_app = idElmaApp;
+              console.log('💾 id_elma_app сохранён в context:', idElmaApp);
+            }
+            
+            // Обрабатываем solution_description: приоритет fetchedSolution, потом данные от ELMA
+            if (fetchedSolution) {
+              // Самый высокий приоритет - данные, полученные из ELMA API
+              updateData.context.solution_description = fetchedSolution;
+              console.log('✅ solution_description получен из ELMA API и сохранён:', fetchedSolution.substring(0, 50) + '...');
+            } else if (applicationData.solution_description !== null && applicationData.solution_description !== undefined) {
               updateData.context.solution_description = applicationData.solution_description;
               console.log('✅ solution_description сохранён в context:', applicationData.solution_description);
             } else {
@@ -180,7 +256,15 @@ router.post('/get_application', async (req, res) => {
         } else {
           // Создаем новую заявку, если её нет
           console.log('🆕 Заявка с id_portal не найдена, создаём новую:', idPortal);
-          // ELMA отправляет: { id, status, description, type, date, initiator, assignee, solution_description }
+          
+          // Если статус "Выполнена" или "Выполнено" и есть id_elma_app, запрашиваем solution_description из ELMA
+          let fetchedSolution = null;
+          if ((newStatus === 'Выполнена' || newStatus === 'Выполнено') && idElmaApp) {
+            console.log('🎯 Статус "Выполнена" при создании и id_elma_app присутствует, запрашиваю solution_description из ELMA');
+            fetchedSolution = await getSolutionFromElma(idElmaApp);
+          }
+          
+          // ELMA отправляет: { id, status, description, type, date, initiator, assignee, solution_description, id_elma_app }
           const contextData = applicationData.context || {
             id_portal: idPortal,
             application_text: applicationData.description || applicationData.application_text || '-',
@@ -189,8 +273,18 @@ router.post('/get_application', async (req, res) => {
             ...(applicationData.initiator && { aplicant: [applicationData.initiator] }),
           };
           
-          // Обрабатываем solution_description: проверяем верхний уровень (приоритет) и context
-          if (applicationData.solution_description !== null && applicationData.solution_description !== undefined) {
+          // Сохраняем id_elma_app
+          if (idElmaApp) {
+            contextData.id_elma_app = idElmaApp;
+            console.log('💾 id_elma_app сохранён при создании заявки:', idElmaApp);
+          }
+          
+          // Обрабатываем solution_description: приоритет fetchedSolution, потом верхний уровень, потом context
+          if (fetchedSolution) {
+            // Самый высокий приоритет - данные, полученные из ELMA API
+            contextData.solution_description = fetchedSolution;
+            console.log('✅ solution_description получен из ELMA API при создании:', fetchedSolution.substring(0, 50) + '...');
+          } else if (applicationData.solution_description !== null && applicationData.solution_description !== undefined) {
             // Приоритет верхнему уровню, если он есть
             contextData.solution_description = applicationData.solution_description;
             console.log('✅ solution_description сохранён при создании заявки:', applicationData.solution_description);
@@ -204,6 +298,7 @@ router.post('/get_application', async (req, res) => {
           
           console.log('📋 Данные для создания заявки:', {
             id_portal: contextData.id_portal,
+            id_elma_app: contextData.id_elma_app,
             application_text: contextData.application_text,
             solution_description: contextData.solution_description,
             status: newStatus || 'Новая'

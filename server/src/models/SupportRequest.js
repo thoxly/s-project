@@ -82,6 +82,11 @@ const supportRequestSchema = new mongoose.Schema({
     solution_description: {
       type: String,
       default: null
+    },
+    id_elma_app: {
+      type: String,
+      default: null,
+      index: true
     }
   },
   
