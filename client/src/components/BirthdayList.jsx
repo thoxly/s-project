@@ -118,7 +118,7 @@ const BirthdayList = () => {
                       color="text.secondary"
                       sx={{ 
                         fontSize: { xs: '0.7rem', sm: '0.75rem' },
-                        lineHeight: { xs: 1.2, sm: 1.3 }
+                        lineHeight: { xs: 1.0, sm: 1.0 }
                       }}
                     >
                       {person.position}
@@ -162,7 +162,7 @@ const BirthdayList = () => {
                   transition: 'all 0.2s ease-in-out'
                 }}
               >
-                <Box display="flex" alignItems="center" justifyContent="space-between" sx={{ flexWrap: { xs: 'wrap', sm: 'nowrap' } }}>
+                <Box display="flex" alignItems="center" justifyContent="space-between" sx={{ flexWrap: { xs: 'wrap', sm: 'nowrap' },width:'100%' }}>
                   <Box display="flex" alignItems="center" sx={{ flex: 1, minWidth: 0, mr: { xs: 1, sm: 2 } }}>
                     <Avatar sx={{ 
                       bgcolor: 'info.main', 
@@ -173,7 +173,7 @@ const BirthdayList = () => {
                     }}>
                       {person.avatar}
                     </Avatar>
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Box sx={{ flex: 1, minWidth: 220 }}>
                       <Typography 
                         variant="body2" 
                         sx={{ 
@@ -203,7 +203,7 @@ const BirthdayList = () => {
                     sx={{ 
                       borderRadius: { xs: 1.5, sm: 2 },
                       fontSize: { xs: '0.65rem', sm: '0.75rem' },
-                      height: { xs: 24, sm: 28 },
+                      height: { xs: 22, sm: 24 },
                       mt: { xs: 1, sm: 0 }
                     }}
                   />

@@ -131,7 +131,7 @@
 /* Улучшения для очень широких экранов */
 @media (min-width: 1200px) {
   .MuiContainer-root {
-    max-width: 1200px !important;
+    max-width: 1400px !important;
   }
 }
 

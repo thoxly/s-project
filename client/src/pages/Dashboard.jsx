@@ -183,7 +183,7 @@ const Dashboard = () => {
   return (
     <Box>
       {/* Основной контент */}
-      <Container maxWidth="xl" sx={{ px: { xs: 1, sm: 2, md: 3 } }}>
+      <Container maxWidth="xl" sx={{ px: { xs: 1, sm: 2, md: 1 } }}>
         {/* Приветствие прямо в теле страницы */}
         <Typography 
           variant={isMobile ? "h6" : "h6"} 
