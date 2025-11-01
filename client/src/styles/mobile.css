@@ -97,8 +97,17 @@
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
   }
   
-  .MuiPaper-root {
+  /* Исключаем Modal, Menu, Drawer и Popover из прозрачности для темной темы */
+  .MuiPaper-root:not(.MuiModal-root):not(.MuiMenu-paper):not(.MuiDrawer-paper):not(.MuiPopover-paper) {
     background-color: rgba(255, 255, 255, 0.03) !important;
+  }
+  
+  /* Принудительно делаем Modal, Menu, Drawer и Popover непрозрачными */
+  .MuiModal-root .MuiPaper-root,
+  .MuiMenu-paper,
+  .MuiDrawer-paper,
+  .MuiPopover-paper {
+    background-color: rgba(255, 255, 255, 1) !important;
   }
 }
 

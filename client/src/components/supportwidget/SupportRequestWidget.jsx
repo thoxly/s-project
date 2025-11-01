@@ -305,9 +305,6 @@ const SupportRequestsWidget = () => {
     try {
       // Загружаем детали заявки из API
       const apiBaseUrl = '';
-      console.log('═══════════════════════════════════════════════════════════');
-      console.log('🔍 ФРОНТЕНД: Загрузка деталей заявки:', request.id);
-      console.log('═══════════════════════════════════════════════════════════');
       
       const response = await fetch(`${apiBaseUrl}/api/requests/support/${request.id}`, {
         method: 'GET',
@@ -319,26 +316,12 @@ const SupportRequestsWidget = () => {
       if (response.ok) {
         const result = await response.json();
         
-        console.log('📥 ФРОНТЕНД: Детали заявки получены:', {
-          success: result.success,
-          has_data: !!result.data,
-          id_portal: result.data?.context?.id_portal,
-          status: result.data?.currentStatus,
-          has_solution_description: !!result.data?.context?.solution_description,
-          solution_description: result.data?.context?.solution_description,
-          application_text_preview: result.data?.context?.application_text ? 
-            result.data.context.application_text.substring(0, 50) + '...' : 
-            'отсутствует',
-          context_keys: Object.keys(result.data?.context || {})
-        });
-        console.log('📋 Полные данные заявки:', result.data);
-        console.log('═══════════════════════════════════════════════════════════\n');
+        console.log(`📋 Заявка загружена: ${request.id} | Статус: ${result.data?.currentStatus} | solution_description: ${result.data?.context?.solution_description ? '✅' : '—'}`);
         
         if (result.success && result.data) {
           setRequestDetails(result.data);
         } else {
-          // Если API вернул успех, но без данных, используем данные из карточки
-          console.warn('⚠️ API вернул успех, но без данных. Используем данные из карточки.');
+          console.warn('⚠️ API вернул успех, но без данных');
           setRequestDetails({
             context: {
               id_portal: request.id,
@@ -349,8 +332,7 @@ const SupportRequestsWidget = () => {
           });
         }
       } else {
-        console.error('❌ Ошибка при загрузке деталей заявки:', response.status);
-        // Если не удалось загрузить из API, используем данные из карточки
+        console.error(`❌ Ошибка загрузки заявки: ${response.status}`);
         setRequestDetails({
           context: {
             id_portal: request.id,
@@ -361,8 +343,7 @@ const SupportRequestsWidget = () => {
         });
       }
     } catch (error) {
-      console.error('❌ Ошибка при загрузке деталей заявки:', error);
-      // Fallback на данные из карточки
+      console.error(`❌ Ошибка: ${error.message}`);
       setRequestDetails({
         context: {
           id_portal: request.id,
@@ -427,13 +408,13 @@ const SupportRequestsWidget = () => {
         ...defaultRequestContext,
         context: {
           ...defaultRequestContext.context,
-          __name: ticketNumber,        // ← Подставляем сформированное имя
-          application_text: description, // подставляем текст из поля "Описание"
-          id_portal: requestId,         // подставляем уникальный ID
+          __name: ticketNumber,
+          application_text: description,
+          id_portal: requestId,
         },
       };
 
-      console.log('📤 Отправка заявки на сервер:', requestToSend);
+      console.log(`📤 Отправка заявки: ${ticketNumber}`);
 
       // --- 4. Отправляем в ELMA ---
       const elmaResponse = await fetch('/api/elma/post_application', {
@@ -452,7 +433,7 @@ const SupportRequestsWidget = () => {
       }
 
       const elmaResult = await elmaResponse.json();
-      console.log('✅ Заявка успешно отправлена в ELMA:', elmaResult);
+      console.log(`✅ Заявка отправлена в ELMA: ${ticketNumber}`);
 
       // --- 5. Пытаемся сохранить в MongoDB ---
       let dbSaveSuccess = true;
@@ -460,15 +441,6 @@ const SupportRequestsWidget = () => {
       const apiBaseUrl = '';
 
       try {
-        console.log('💾 Сохранение заявки в БД:', {
-          url: `${apiBaseUrl}/api/requests/support`,
-          data: {
-            ...requestToSend,
-            sentAt: new Date().toISOString(),
-            currentStatus: 'Новая',
-          }
-        });
-
         const saveToDbResponse = await fetch(`${apiBaseUrl}/api/requests/support`, {
           method: 'POST',
           headers: {
@@ -489,11 +461,7 @@ const SupportRequestsWidget = () => {
             errorData = { error: await saveToDbResponse.text() };
           }
 
-          console.error('❌ Ошибка сохранения в БД:', {
-            status: saveToDbResponse.status,
-            statusText: saveToDbResponse.statusText,
-            error: errorData
-          });
+          console.error(`❌ Ошибка БД: ${saveToDbResponse.status} - ${errorData.error}`);
 
           dbSaveSuccess = false;
           dbErrorDetails = {
@@ -503,10 +471,10 @@ const SupportRequestsWidget = () => {
           };
         } else {
           const dbResult = await saveToDbResponse.json();
-          console.log('✅ Заявка сохранена в MongoDB:', dbResult);
+          console.log(`💾 Заявка сохранена в БД: ${ticketNumber}`);
         }
       } catch (dbError) {
-        console.error('❌ Исключение при сохранении в БД:', dbError);
+        console.error(`❌ Ошибка сохранения в БД: ${dbError.message}`);
         dbSaveSuccess = false;
         dbErrorDetails = {
           error: dbError.message
@@ -531,8 +499,7 @@ const SupportRequestsWidget = () => {
       // Закрываем модальное окно и сбрасываем состояние
       // handleCloseCreate(); // Не закрываем автоматически при предупреждении
     } catch (error) {
-      console.error('❌ Ошибка при обработке заявки:', error);
-      // --- Устанавливаем состояние ошибки ---
+      console.error(`❌ Ошибка: ${error.message}`);
       setSendResult('error');
       setSendMessage(`Не удалось отправить заявку: ${error.message}`);
     } finally {
@@ -543,7 +510,6 @@ const SupportRequestsWidget = () => {
   // --- Функция для загрузки заявок из API ---
   const loadRequestsFromAPI = async () => {
     try {
-      // Используем относительный путь, Vite proxy перенаправит на localhost:3000
       const apiBaseUrl = '';
       const response = await fetch(`${apiBaseUrl}/api/requests/support`, {
         method: 'GET',
@@ -553,36 +519,13 @@ const SupportRequestsWidget = () => {
       });
 
       if (!response.ok) {
-        console.warn(`⚠️ Ошибка при загрузке заявок: ${response.status} ${response.statusText}`);
-        // Fallback на localStorage если API недоступен
+        console.warn(`⚠️ API недоступен: ${response.status}`);
         return loadRequestsFromLocalStorage();
       }
 
       const result = await response.json();
-      console.log('═══════════════════════════════════════════════════════════');
-      console.log('📥 ФРОНТЕНД: Заявки загружены из API:', result);
-      console.log('📊 Количество заявок:', result.data?.length || 0);
-      console.log('═══════════════════════════════════════════════════════════');
 
       if (result.success && Array.isArray(result.data)) {
-        // Детальное логирование каждой заявки
-        result.data.forEach((item, index) => {
-          console.log(`\n📋 Заявка #${index + 1}:`, {
-            _id: item._id,
-            id_portal: item.context?.id_portal,
-            status: item.currentStatus,
-            has_solution_description: !!item.context?.solution_description,
-            solution_description_preview: item.context?.solution_description ? 
-              item.context.solution_description.substring(0, 50) + '...' : 
-              'отсутствует',
-            application_text_preview: item.context?.application_text ? 
-              item.context.application_text.substring(0, 50) + '...' : 
-              'отсутствует',
-            full_context_keys: Object.keys(item.context || {})
-          });
-        });
-        console.log('═══════════════════════════════════════════════════════════\n');
-
         const formattedRequests = result.data.map((storageItem) => {
           const context = storageItem.context || {};
           const appId = context.id_portal || generateSimpleUUID();
@@ -600,15 +543,13 @@ const SupportRequestsWidget = () => {
         });
 
         setRequests(formattedRequests);
-        console.log(`✅ Установлено ${formattedRequests.length} заявок из API.`);
+        console.log(`✅ Загружено заявок: ${formattedRequests.length}`);
         return formattedRequests;
       } else {
-        // Fallback на localStorage
         return loadRequestsFromLocalStorage();
       }
     } catch (error) {
-      console.error('❌ Ошибка при загрузке заявок из API:', error);
-      // Fallback на localStorage
+      console.error(`❌ Ошибка загрузки: ${error.message}`);
       return loadRequestsFromLocalStorage();
     }
   };
@@ -616,16 +557,14 @@ const SupportRequestsWidget = () => {
   // --- Функция для загрузки заявок из localStorage (fallback) ---
   const loadRequestsFromLocalStorage = () => {
     try {
-      console.log('📂 Загрузка существующих заявок из localStorage (fallback)...');
       const storedRequestsRaw = localStorage.getItem('applications');
       let storedRequests = [];
 
       if (storedRequestsRaw) {
         try {
           storedRequests = JSON.parse(storedRequestsRaw);
-          console.log(`✅ Успешно загружено ${storedRequests.length} заявок из localStorage.`);
         } catch (parseError) {
-          console.error('⚠️ Ошибка парсинга данных из localStorage:', parseError);
+          console.error('⚠️ Ошибка парсинга localStorage');
           storedRequests = [];
         }
       }
@@ -648,10 +587,10 @@ const SupportRequestsWidget = () => {
       });
 
       setRequests(formattedRequests);
-      console.log(`📦 Установлено ${formattedRequests.length} заявок из localStorage.`);
+      console.log(`📦 Загружено из localStorage: ${formattedRequests.length}`);
       return formattedRequests;
     } catch (error) {
-      console.error('💥 Неожиданная ошибка при загрузке заявок из localStorage:', error);
+      console.error(`💥 Ошибка localStorage: ${error.message}`);
       setRequests([]);
       return [];
     }
@@ -665,28 +604,18 @@ const SupportRequestsWidget = () => {
     loadTimerId = setTimeout(async () => {
       await loadRequestsFromAPI();
       setLoading(false);
-      console.log('🏁 Первоначальная загрузка завершена.');
 
-      // Периодически обновляем список заявок (статусы теперь сохраняются напрямую в MongoDB через webhook от ELMA)
-      console.log('📡 Запуск периодического обновления списка заявок каждые 10 секунд...');
+      // Периодически обновляем список заявок (каждые 10 секунд)
       refreshIntervalId = setInterval(async () => {
-        console.log('🔁 Выполнение периодического обновления списка заявок...');
         await loadRequestsFromAPI();
-      }, 10000); // Каждые 10 секунд
-    }, 500); // Небольшая задержка для имитации загрузки
+      }, 10000);
+    }, 500);
 
     return () => {
-      console.log('🧹 Очистка ресурсов компонента...');
-      if (loadTimerId) {
-        clearTimeout(loadTimerId);
-        console.log('⏱️ Таймер загрузки очищен.');
-      }
-      if (refreshIntervalId) {
-        clearInterval(refreshIntervalId);
-        console.log('⏰ Интервал обновления остановлен.');
-      }
+      if (loadTimerId) clearTimeout(loadTimerId);
+      if (refreshIntervalId) clearInterval(refreshIntervalId);
     };
-  }, []); // Пустой массив зависимостей - эффект выполняется только при монтировании
+  }, []);
 
   if (loading) {
     return (
@@ -751,6 +680,9 @@ const SupportRequestsWidget = () => {
                   overflowY: 'auto',
                   mt: 0.5, // Небольшой отступ сверху, чтобы не прилипало вплотную
                   mr: 0.5, // Небольшой отступ справа, если нужно
+                  // --- Принудительно устанавливаем непрозрачный фон ---
+                  backgroundColor: '#ffffff !important',
+                  backdropFilter: 'none !important',
                 },
               }}
             >
@@ -810,6 +742,9 @@ const SupportRequestsWidget = () => {
             p: 3,
             maxHeight: '90vh',
             overflowY: 'auto', // Скролл внутри модального окна
+            // --- Принудительно устанавливаем непрозрачный фон ---
+            backgroundColor: '#ffffff !important',
+            backdropFilter: 'none !important',
           }}
         >
           {/* --- Условный рендеринг: сообщение или форма --- */}
@@ -975,6 +910,9 @@ const SupportRequestsWidget = () => {
           sx: {
             width: { xs: '100%', sm: 480, md: 600 },
             maxWidth: '90vw',
+            // --- Принудительно устанавливаем непрозрачный фон ---
+            backgroundColor: '#ffffff !important',
+            backdropFilter: 'none !important',
           },
         }}
       >

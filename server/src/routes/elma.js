@@ -22,40 +22,24 @@ const isMongoConnected = () => {
   return readyState === 1 && hasModel;
 };
 
-// Функция для получения solution_description из ELMA по id_elma_app
-const getSolutionFromElma = async (idElmaApp) => {
-  try {
-    console.log(`🔍 Запрашиваю solution_description из ELMA для id: ${idElmaApp}`);
-    
-    const response = await fetch(
-      `https://og4d3xrizqpay.elma365.ru/pub/v1/app/service_desk/applications/${idElmaApp}/get`,
-      {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer 94803282-2c5f-44f1-a57f-d59552040232`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-
-    if (!response.ok) {
-      console.error(`❌ Ошибка при запросе к ELMA: ${response.status} ${response.statusText}`);
-      return null;
-    }
-
-    const data = await response.json();
-    
-    if (data.success && data.item && data.item.solution_description) {
-      console.log(`✅ solution_description получен из ELMA: ${data.item.solution_description.substring(0, 50)}...`);
-      return data.item.solution_description;
-    } else {
-      console.warn(`⚠️  solution_description не найден в ответе ELMA`);
-      return null;
-    }
-  } catch (error) {
-    console.error(`❌ Ошибка при получении данных из ELMA:`, error);
-    return null;
+// Функция для извлечения solution_description из данных ELMA
+// ELMA отправляет solution_description в POST запросе напрямую
+const extractSolutionDescription = (applicationData) => {
+  // Проверяем solution_description на верхнем уровне (основной случай)
+  if (applicationData.solution_description !== null && 
+      applicationData.solution_description !== undefined && 
+      applicationData.solution_description !== '-') {
+    return applicationData.solution_description;
   }
+  
+  // Проверяем в context (резервный вариант)
+  if (applicationData.context?.solution_description !== null && 
+      applicationData.context?.solution_description !== undefined && 
+      applicationData.context?.solution_description !== '-') {
+    return applicationData.context.solution_description;
+  }
+  
+  return null;
 };
 
 // CORS middleware для этого роутера - МАКСИМАЛЬНО ЛИБЕРАЛЬНАЯ ПОЛИТИКА
@@ -79,20 +63,9 @@ router.use((req, res, next) => {
 router.post('/get_application', async (req, res) => {
   // ВАЖНО: Всегда отвечаем 200 OK, чтобы ELMA не получал 502
   try {
-    // req.body — это defaultRequestContext, который пришёл от ELMA
     const applicationData = req.body;
     
-    // Подробное логирование для отладки
-    console.log('═══════════════════════════════════════════════════════════');
-    console.log('📥 Webhook от ELMA получен:', new Date().toISOString());
-    console.log('📥 URL:', req.originalUrl);
-    console.log('📥 Заголовки:', JSON.stringify(req.headers, null, 2));
-    console.log('📥 Тело запроса:', JSON.stringify(applicationData, null, 2));
-    console.log('📊 MongoDB статус:', mongoose.connection.readyState === 1 ? '✅ Подключена' : '❌ Не подключена');
-    console.log('═══════════════════════════════════════════════════════════');
-
     // Извлекаем id_portal, статус и id_elma_app из данных
-    // ELMA отправляет: { id, status, description, type, date, initiator, assignee, id_elma_app }
     let idPortal = null;
     let newStatus = null;
     let idElmaApp = null;
@@ -125,13 +98,10 @@ router.post('/get_application', async (req, res) => {
       idElmaApp = applicationData.context.id_elma_app;
     }
 
-    console.log('🔍 Извлеченные данные:', { 
-      idPortal, 
-      newStatus,
-      idElmaApp,
-      solution_description: applicationData.solution_description || applicationData.context?.solution_description,
-      receivedFields: Object.keys(applicationData)
-    });
+    // Извлекаем solution_description из данных ELMA
+    const solutionDescription = extractSolutionDescription(applicationData);
+
+    console.log(`📥 ELMA Webhook: ${idPortal} | Статус: ${newStatus || 'не указан'} | solution_description: ${solutionDescription ? '✅' : '—'}`);
 
     // ВАЖНО: Проверяем, что id_portal не "-" (это означает ошибку от ELMA)
     if (!idPortal || idPortal === '-' || idPortal === 'undefined') {
@@ -159,94 +129,50 @@ router.post('/get_application', async (req, res) => {
             updatedAt: new Date()
           };
 
-          // Обновляем статус, если он указан (ELMA отправляет в поле "status")
+          // Обновляем статус, если он указан
           if (newStatus) {
             updateData.currentStatus = newStatus;
           }
 
-          // Если статус "Выполнена" или "Выполнено" и есть id_elma_app, запрашиваем solution_description из ELMA
-          let fetchedSolution = null;
-          if ((newStatus === 'Выполнена' || newStatus === 'Выполнено') && idElmaApp) {
-            console.log('🎯 Статус "Выполнена" и id_elma_app присутствует, запрашиваю solution_description из ELMA');
-            fetchedSolution = await getSolutionFromElma(idElmaApp);
-          }
-
           // Обновляем context с данными от ELMA
-          // ELMA отправляет: { id, status, description, type, date, initiator, assignee, solution_description, id_elma_app }
           if (applicationData.context) {
-            // Если данные уже в context (редкий случай)
-            console.log('📦 ELMA прислала данные с полем context');
             updateData.context = { ...existingRequest.context, ...applicationData.context };
             updateData.context.id_portal = idPortal;
             
-            // Сохраняем id_elma_app
             if (idElmaApp) {
               updateData.context.id_elma_app = idElmaApp;
-              console.log('💾 id_elma_app сохранён в context:', idElmaApp);
             }
             
-            // Обрабатываем solution_description: приоритет fetchedSolution, потом верхний уровень, потом context
-            if (fetchedSolution) {
-              // Самый высокий приоритет - данные, полученные из ELMA API
-              updateData.context.solution_description = fetchedSolution;
-              console.log('💡 solution_description взят из ELMA API:', fetchedSolution.substring(0, 50) + '...');
-            } else if (applicationData.solution_description !== null && applicationData.solution_description !== undefined) {
-              // Приоритет верхнему уровню, если он есть
-              updateData.context.solution_description = applicationData.solution_description;
-              console.log('💡 solution_description взят с верхнего уровня:', applicationData.solution_description);
-            } else if (applicationData.context.solution_description !== null && applicationData.context.solution_description !== undefined) {
-              // Если нет на верхнем уровне, берем из context
-              updateData.context.solution_description = applicationData.context.solution_description;
-              console.log('💡 solution_description взят из context:', applicationData.context.solution_description);
+            if (solutionDescription !== null) {
+              updateData.context.solution_description = solutionDescription;
             }
           } else {
-            // Если данные пришли напрямую от ELMA (основной случай), маппим их в context
-            console.log('📦 ELMA прислала данные БЕЗ поля context (стандартный формат)');
+            // Данные пришли напрямую от ELMA (основной случай)
             updateData.context = {
               ...existingRequest.context,
               id_portal: idPortal,
-              // Сохраняем данные от ELMA в context
               application_text: applicationData.description || existingRequest.context?.application_text,
-              // Обновляем другие поля если они есть
               ...(applicationData.type && { service: [applicationData.type] }),
               ...(applicationData.assignee && { responsible: [applicationData.assignee] }),
               ...(applicationData.initiator && { aplicant: [applicationData.initiator] }),
             };
             
-            // Сохраняем id_elma_app
             if (idElmaApp) {
               updateData.context.id_elma_app = idElmaApp;
-              console.log('💾 id_elma_app сохранён в context:', idElmaApp);
             }
             
-            // Обрабатываем solution_description: приоритет fetchedSolution, потом данные от ELMA
-            if (fetchedSolution) {
-              // Самый высокий приоритет - данные, полученные из ELMA API
-              updateData.context.solution_description = fetchedSolution;
-              console.log('✅ solution_description получен из ELMA API и сохранён:', fetchedSolution.substring(0, 50) + '...');
-            } else if (applicationData.solution_description !== null && applicationData.solution_description !== undefined) {
-              updateData.context.solution_description = applicationData.solution_description;
-              console.log('✅ solution_description сохранён в context:', applicationData.solution_description);
-            } else {
-              console.log('⚠️  solution_description отсутствует или null:', applicationData.solution_description);
+            if (solutionDescription !== null) {
+              updateData.context.solution_description = solutionDescription;
             }
           }
 
           const updatedRequest = await SupportRequest.findOneAndUpdate(
             { 'context.id_portal': idPortal },
             updateData,
-            { new: true, runValidators: false } // Отключаем строгую валидацию для статусов от ELMA
+            { new: true, runValidators: false }
           );
 
-          console.log('✅ Заявка обновлена в MongoDB:', {
-            _id: updatedRequest._id,
-            id_portal: idPortal,
-            status: updatedRequest.currentStatus,
-            has_solution: !!updatedRequest.context?.solution_description,
-            solution_preview: updatedRequest.context?.solution_description ? 
-              updatedRequest.context.solution_description.substring(0, 50) + '...' : 
-              'отсутствует'
-          });
+          console.log(`✅ Заявка обновлена: ${idPortal} | ${updatedRequest.currentStatus}`);
 
           return res.status(200).json({ 
             success: true,
@@ -254,17 +180,7 @@ router.post('/get_application', async (req, res) => {
             data: updatedRequest
           });
         } else {
-          // Создаем новую заявку, если её нет
-          console.log('🆕 Заявка с id_portal не найдена, создаём новую:', idPortal);
-          
-          // Если статус "Выполнена" или "Выполнено" и есть id_elma_app, запрашиваем solution_description из ELMA
-          let fetchedSolution = null;
-          if ((newStatus === 'Выполнена' || newStatus === 'Выполнено') && idElmaApp) {
-            console.log('🎯 Статус "Выполнена" при создании и id_elma_app присутствует, запрашиваю solution_description из ELMA');
-            fetchedSolution = await getSolutionFromElma(idElmaApp);
-          }
-          
-          // ELMA отправляет: { id, status, description, type, date, initiator, assignee, solution_description, id_elma_app }
+          // Создаем новую заявку
           const contextData = applicationData.context || {
             id_portal: idPortal,
             application_text: applicationData.description || applicationData.application_text || '-',
@@ -273,36 +189,13 @@ router.post('/get_application', async (req, res) => {
             ...(applicationData.initiator && { aplicant: [applicationData.initiator] }),
           };
           
-          // Сохраняем id_elma_app
           if (idElmaApp) {
             contextData.id_elma_app = idElmaApp;
-            console.log('💾 id_elma_app сохранён при создании заявки:', idElmaApp);
           }
           
-          // Обрабатываем solution_description: приоритет fetchedSolution, потом верхний уровень, потом context
-          if (fetchedSolution) {
-            // Самый высокий приоритет - данные, полученные из ELMA API
-            contextData.solution_description = fetchedSolution;
-            console.log('✅ solution_description получен из ELMA API при создании:', fetchedSolution.substring(0, 50) + '...');
-          } else if (applicationData.solution_description !== null && applicationData.solution_description !== undefined) {
-            // Приоритет верхнему уровню, если он есть
-            contextData.solution_description = applicationData.solution_description;
-            console.log('✅ solution_description сохранён при создании заявки:', applicationData.solution_description);
-          } else if (applicationData.context?.solution_description !== null && applicationData.context?.solution_description !== undefined) {
-            // Если нет на верхнем уровне, берем из context
-            contextData.solution_description = applicationData.context.solution_description;
-            console.log('✅ solution_description взят из context при создании:', applicationData.context.solution_description);
-          } else {
-            console.log('⚠️  solution_description отсутствует при создании заявки');
+          if (solutionDescription !== null) {
+            contextData.solution_description = solutionDescription;
           }
-          
-          console.log('📋 Данные для создания заявки:', {
-            id_portal: contextData.id_portal,
-            id_elma_app: contextData.id_elma_app,
-            application_text: contextData.application_text,
-            solution_description: contextData.solution_description,
-            status: newStatus || 'Новая'
-          });
           
           const newRequest = new SupportRequest({
             context: contextData,
@@ -311,12 +204,7 @@ router.post('/get_application', async (req, res) => {
           });
 
           const savedRequest = await newRequest.save();
-          console.log('✅ Новая заявка создана в MongoDB:', {
-            _id: savedRequest._id,
-            id_portal: idPortal,
-            status: savedRequest.currentStatus,
-            has_solution: !!savedRequest.context?.solution_description
-          });
+          console.log(`🆕 Заявка создана: ${idPortal} | ${savedRequest.currentStatus}`);
 
           return res.status(200).json({ 
             success: true,
@@ -325,9 +213,7 @@ router.post('/get_application', async (req, res) => {
           });
         }
       } catch (dbError) {
-        console.error('❌ Ошибка при работе с MongoDB:', dbError);
-        console.error('❌ Stack trace:', dbError.stack);
-        // Возвращаем 200 OK, чтобы ELMA не получал 502
+        console.error(`❌ Ошибка БД: ${dbError.message}`);
         return res.status(200).json({ 
           success: true,
           warning: 'Webhook получен, но не удалось сохранить в БД',
@@ -336,9 +222,7 @@ router.post('/get_application', async (req, res) => {
         });
       }
     } else {
-      console.warn('⚠️  MongoDB не подключена, данные не сохранены');
-      console.warn('⚠️  Данные от ELMA получены успешно, но будут потеряны');
-      // Возвращаем 200 OK, чтобы ELMA не получал 502
+      console.warn('⚠️  MongoDB не подключена');
       return res.status(200).json({ 
         success: true,
         warning: 'MongoDB не подключена, данные получены но не сохранены',
@@ -346,9 +230,7 @@ router.post('/get_application', async (req, res) => {
       });
     }
   } catch (error) {
-    console.error('❌ КРИТИЧЕСКАЯ ОШИБКА при обработке webhook от ELMA:', error);
-    console.error('❌ Stack trace:', error.stack);
-    // Всегда возвращаем 200 OK, чтобы ELMA не получал 502
+    console.error(`❌ КРИТИЧЕСКАЯ ОШИБКА: ${error.message}`);
     return res.status(200).json({ 
       success: true,
       warning: 'Webhook получен, но произошла ошибка при обработке',
