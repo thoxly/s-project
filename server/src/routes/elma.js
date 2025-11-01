@@ -22,10 +22,41 @@ const isMongoConnected = () => {
   return readyState === 1 && hasModel;
 };
 
-// Функция для извлечения solution_description из данных ELMA
-// ELMA отправляет solution_description в POST запросе напрямую
+// Функция для получения solution_description из ELMA API
+const fetchSolutionFromElma = async (idElmaApp) => {
+  try {
+    const response = await fetch(
+      `https://og4d3xrizqpay.elma365.ru/pub/v1/app/service_desk/applications/${idElmaApp}/get`,
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer 94803282-2c5f-44f1-a57f-d59552040232`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      console.error(`❌ ELMA API error: ${response.status}`);
+      return null;
+    }
+
+    const data = await response.json();
+    
+    if (data.success && data.item && data.item.solution_description) {
+      return data.item.solution_description;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error(`❌ Ошибка запроса к ELMA: ${error.message}`);
+    return null;
+  }
+};
+
+// Функция для извлечения solution_description из данных webhook
 const extractSolutionDescription = (applicationData) => {
-  // Проверяем solution_description на верхнем уровне (основной случай)
+  // Проверяем solution_description на верхнем уровне
   if (applicationData.solution_description !== null && 
       applicationData.solution_description !== undefined && 
       applicationData.solution_description !== '-') {
@@ -134,6 +165,16 @@ router.post('/get_application', async (req, res) => {
             updateData.currentStatus = newStatus;
           }
 
+          // Если есть id_elma_app, запрашиваем актуальные данные из ELMA API
+          let fetchedSolution = null;
+          if (idElmaApp) {
+            console.log(`🔄 Запрос solution_description из ELMA API для ${idElmaApp}`);
+            fetchedSolution = await fetchSolutionFromElma(idElmaApp);
+            if (fetchedSolution) {
+              console.log(`✅ solution_description получен из ELMA API`);
+            }
+          }
+
           // Обновляем context с данными от ELMA
           if (applicationData.context) {
             updateData.context = { ...existingRequest.context, ...applicationData.context };
@@ -143,7 +184,10 @@ router.post('/get_application', async (req, res) => {
               updateData.context.id_elma_app = idElmaApp;
             }
             
-            if (solutionDescription !== null) {
+            // Приоритет: fetchedSolution > webhook solution_description
+            if (fetchedSolution !== null) {
+              updateData.context.solution_description = fetchedSolution;
+            } else if (solutionDescription !== null) {
               updateData.context.solution_description = solutionDescription;
             }
           } else {
@@ -161,7 +205,10 @@ router.post('/get_application', async (req, res) => {
               updateData.context.id_elma_app = idElmaApp;
             }
             
-            if (solutionDescription !== null) {
+            // Приоритет: fetchedSolution > webhook solution_description
+            if (fetchedSolution !== null) {
+              updateData.context.solution_description = fetchedSolution;
+            } else if (solutionDescription !== null) {
               updateData.context.solution_description = solutionDescription;
             }
           }
@@ -181,6 +228,17 @@ router.post('/get_application', async (req, res) => {
           });
         } else {
           // Создаем новую заявку
+          
+          // Если есть id_elma_app, запрашиваем актуальные данные из ELMA API
+          let fetchedSolution = null;
+          if (idElmaApp) {
+            console.log(`🔄 Запрос solution_description из ELMA API для ${idElmaApp}`);
+            fetchedSolution = await fetchSolutionFromElma(idElmaApp);
+            if (fetchedSolution) {
+              console.log(`✅ solution_description получен из ELMA API`);
+            }
+          }
+          
           const contextData = applicationData.context || {
             id_portal: idPortal,
             application_text: applicationData.description || applicationData.application_text || '-',
@@ -193,7 +251,10 @@ router.post('/get_application', async (req, res) => {
             contextData.id_elma_app = idElmaApp;
           }
           
-          if (solutionDescription !== null) {
+          // Приоритет: fetchedSolution > webhook solution_description
+          if (fetchedSolution !== null) {
+            contextData.solution_description = fetchedSolution;
+          } else if (solutionDescription !== null) {
             contextData.solution_description = solutionDescription;
           }
           
